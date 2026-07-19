@@ -12,4 +12,5 @@ class AISettings(BaseSettings):
         env_file_encoding = "utf-8"
 
 
-ai_settings = AISettings()
+def get_ai_settings() -> AISettings:
+    return AISettings()

@@ -12,6 +12,7 @@ from .purchase_order_repository import PurchaseOrderRepositoryImpl
 from .sale_order_repository import SaleOrderRepositoryImpl
 from .supplier_debt_repository import SupplierDebtRepositoryImpl
 from .supplier_repository import SupplierRepositoryImpl
+from .system_setting_repository import SystemSettingRepositoryImpl
 from .transaction_repository import TransactionRepositoryImpl
 from .user_repository import UserRepositoryImpl
 
@@ -30,6 +31,7 @@ __all__ = [
     "SaleOrderRepositoryImpl",
     "SupplierDebtRepositoryImpl",
     "SupplierRepositoryImpl",
+    "SystemSettingRepositoryImpl",
     "TransactionRepositoryImpl",
     "UserRepositoryImpl",
 ]

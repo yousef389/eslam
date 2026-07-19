@@ -1,4 +1,5 @@
 import os
+import logging
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -23,6 +24,12 @@ from app.core.middleware import (
 )
 from app.core.rate_limit import AccountLockoutMiddleware, RateLimitMiddleware
 from app.presentation.api.v1.router import router as v1_router
+
+logging.basicConfig(
+    level=getattr(logging, settings.LOG_LEVEL),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -104,10 +111,20 @@ async def health_check():
     return {"status": "healthy"}
 
 
-# Serve frontend static files
+# Serve frontend static files (production only)
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend" / "dist"
 
-if FRONTEND_DIR.exists():
+if settings.DEBUG:
+    @app.get("/")
+    async def root():
+        return {
+            "app": settings.APP_NAME,
+            "version": settings.APP_VERSION,
+            "status": "running",
+            "docs": "/docs",
+            "mode": "development",
+        }
+elif FRONTEND_DIR.exists():
     app.mount("/assets", StaticFiles(directory=FRONTEND_DIR / "assets"), name="assets")
 
     @app.get("/{full_path:path}")

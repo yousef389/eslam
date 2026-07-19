@@ -12,6 +12,7 @@ from .enums import (
     ExtractionStatus,
     OrderStatus,
     PaymentMethod,
+    SettingsGroup,
     TransactionType,
     UserRole,
 )
@@ -262,3 +263,15 @@ class AuditLog:
     details: Dict[str, Any] = field(default_factory=dict)
     ip_address: str = ""
     created_at: datetime = field(default_factory=_now_utc)
+
+
+@dataclass
+class SystemSetting:
+    id: str = field(default_factory=_new_id)
+    key: str = ""
+    value: str = ""
+    group: SettingsGroup = SettingsGroup.STORE
+    description: str = ""
+    is_secret: bool = False
+    created_at: datetime = field(default_factory=_now_utc)
+    updated_at: datetime = field(default_factory=_now_utc)

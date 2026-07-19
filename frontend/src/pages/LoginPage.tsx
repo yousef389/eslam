@@ -69,7 +69,7 @@ export default function LoginPage() {
         </form>
         
         <p className="text-center text-sm text-gray-500 mt-4">
-          Demo: admin / admin123
+          نظام ERP للأدوات الصحية
         </p>
       </div>
     </div>

@@ -46,3 +46,11 @@ class ExtractionStatus(str, Enum):
     REVIEWED = "reviewed"
     APPROVED = "approved"
     REJECTED = "rejected"
+
+
+class SettingsGroup(str, Enum):
+    AI = "ai"
+    TELEGRAM = "telegram"
+    API = "api"
+    SECURITY = "security"
+    STORE = "store"

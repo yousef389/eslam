@@ -13,6 +13,7 @@ from app.application.use_cases.auth_use_cases import (
     RegisterUseCase,
 )
 from app.core.dependencies import get_current_user
+from app.core.security import decode_token
 from app.infrastructure.database import get_db
 from app.infrastructure.repositories.user_repository import UserRepositoryImpl
 

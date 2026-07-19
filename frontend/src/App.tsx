@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
+import ErrorBoundary from './components/ErrorBoundary'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
@@ -19,6 +20,8 @@ import AccountingSuppliersPage from './pages/AccountingSuppliersPage'
 import CashboxPage from './pages/CashboxPage'
 import ReportsPage from './pages/ReportsPage'
 import AIPage from './pages/AIPage'
+import SettingsPage from './pages/SettingsPage'
+import NotFoundPage from './pages/NotFoundPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,31 +37,34 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-          <Route path="/products" element={<ProtectedRoute><ProductsPage /></ProtectedRoute>} />
-          <Route path="/products/:id" element={<ProtectedRoute><ProductDetailPage /></ProtectedRoute>} />
-          <Route path="/customers" element={<ProtectedRoute><CustomersPage /></ProtectedRoute>} />
-          <Route path="/customers/:id" element={<ProtectedRoute><CustomerDetailPage /></ProtectedRoute>} />
-          <Route path="/suppliers" element={<ProtectedRoute><SuppliersPage /></ProtectedRoute>} />
-          <Route path="/suppliers/:id" element={<ProtectedRoute><SupplierDetailPage /></ProtectedRoute>} />
-          <Route path="/sales" element={<ProtectedRoute><SalesPage /></ProtectedRoute>} />
-          <Route path="/sales/:id" element={<ProtectedRoute><SaleDetailPage /></ProtectedRoute>} />
-          <Route path="/purchases" element={<ProtectedRoute><PurchasesPage /></ProtectedRoute>} />
-          <Route path="/purchases/:id" element={<ProtectedRoute><PurchaseDetailPage /></ProtectedRoute>} />
-          <Route path="/accounting/customers" element={<ProtectedRoute><AccountingCustomersPage /></ProtectedRoute>} />
-          <Route path="/accounting/suppliers" element={<ProtectedRoute><AccountingSuppliersPage /></ProtectedRoute>} />
-          <Route path="/accounting/cashbox" element={<ProtectedRoute><CashboxPage /></ProtectedRoute>} />
-          <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
-          <Route path="/ai" element={<ProtectedRoute><AIPage /></ProtectedRoute>} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-      <Toaster position="top-right" />
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/products" element={<ProtectedRoute><ProductsPage /></ProtectedRoute>} />
+            <Route path="/products/:id" element={<ProtectedRoute><ProductDetailPage /></ProtectedRoute>} />
+            <Route path="/customers" element={<ProtectedRoute><CustomersPage /></ProtectedRoute>} />
+            <Route path="/customers/:id" element={<ProtectedRoute><CustomerDetailPage /></ProtectedRoute>} />
+            <Route path="/suppliers" element={<ProtectedRoute><SuppliersPage /></ProtectedRoute>} />
+            <Route path="/suppliers/:id" element={<ProtectedRoute><SupplierDetailPage /></ProtectedRoute>} />
+            <Route path="/sales" element={<ProtectedRoute><SalesPage /></ProtectedRoute>} />
+            <Route path="/sales/:id" element={<ProtectedRoute><SaleDetailPage /></ProtectedRoute>} />
+            <Route path="/purchases" element={<ProtectedRoute><PurchasesPage /></ProtectedRoute>} />
+            <Route path="/purchases/:id" element={<ProtectedRoute><PurchaseDetailPage /></ProtectedRoute>} />
+            <Route path="/accounting/customers" element={<ProtectedRoute><AccountingCustomersPage /></ProtectedRoute>} />
+            <Route path="/accounting/suppliers" element={<ProtectedRoute><AccountingSuppliersPage /></ProtectedRoute>} />
+            <Route path="/accounting/cashbox" element={<ProtectedRoute><CashboxPage /></ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+            <Route path="/ai" element={<ProtectedRoute><AIPage /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </BrowserRouter>
+        <Toaster position="top-right" />
+      </QueryClientProvider>
+    </ErrorBoundary>
   )
 }
 

@@ -12,8 +12,6 @@ services:
         fromDatabase:
           name: sanitary-erp-db
           property: connectionString
-      - key: REDIS_URL
-        sync: false
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: DEBUG
@@ -22,6 +20,8 @@ services:
         value: '["*"]'
       - key: PYTHON_VERSION
         value: "3.12"
+      - key: LOG_LEVEL
+        value: "INFO"
 
 databases:
   - name: sanitary-erp-db

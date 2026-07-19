@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Users, Truck, ShoppingCart,
   BarChart3, Brain, LogOut, Menu, X,
-  Landmark
+  Landmark, Settings
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import api from '../lib/api'
@@ -36,6 +36,7 @@ const navigation: NavItem[] = [
   },
   { name: 'التقارير', href: '/reports', icon: BarChart3 },
   { name: 'الذكاء الاصطناعي', href: '/ai', icon: Brain },
+  { name: 'الإعدادات', href: '/settings', icon: Settings },
 ]
 
 function findPageName(pathname: string): string {

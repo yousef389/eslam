@@ -8,6 +8,7 @@ from .products import ProductModel
 from .purchase_orders import PurchaseOrderItemModel, PurchaseOrderModel
 from .sale_orders import SaleOrderItemModel, SaleOrderModel
 from .suppliers import SupplierModel
+from .system_settings import SystemSettingModel
 from .transactions import TransactionModel
 from .users import UserModel
 
@@ -26,6 +27,7 @@ __all__ = [
     "SaleOrderItemModel",
     "SaleOrderModel",
     "SupplierDebtModel",
+    "SystemSettingModel",
     "SupplierModel",
     "TransactionModel",
     "UserModel",

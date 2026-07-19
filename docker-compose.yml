@@ -11,7 +11,7 @@ services:
     environment:
       POSTGRES_DB: ${DB_NAME:-sanitary_erp_production}
       POSTGRES_USER: ${DB_USER:-erp_production_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password_123}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -29,13 +29,13 @@ services:
     image: redis:7-alpine
     container_name: sanitary_erp_redis
     restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_password_123}
+    command: redis-server --requirepass ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
     ports:
       - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_password_123}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -54,8 +54,8 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-erp_production_user}:${DB_PASSWORD:-secure_password_123}@postgres:5432/${DB_NAME:-sanitary_erp_production}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password_123}@redis:6379/0
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
     depends_on:
       postgres:
         condition: service_healthy
@@ -76,8 +76,8 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-erp_production_user}:${DB_PASSWORD:-secure_password_123}@postgres:5432/${DB_NAME:-sanitary_erp_production}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password_123}@redis:6379/0
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
     command: celery -A app.core.celery_app worker --loglevel=info --concurrency=4
     depends_on:
       postgres:
@@ -96,8 +96,8 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-erp_production_user}:${DB_PASSWORD:-secure_password_123}@postgres:5432/${DB_NAME:-sanitary_erp_production}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password_123}@redis:6379/0
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
     command: python -m app.telegram.runner
     depends_on:
       postgres:
@@ -163,7 +163,7 @@ services:
     ports:
       - "127.0.0.1:3001:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?Set GRAFANA_PASSWORD in .env}
     volumes:
       - grafana_data:/var/lib/grafana
     networks:

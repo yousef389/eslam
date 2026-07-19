@@ -21,10 +21,11 @@ from .entities import (
     SaleOrderItem,
     Supplier,
     SupplierDebt,
+    SystemSetting,
     Transaction,
     User,
 )
-from .enums import DebtStatus, ExtractionStatus, TransactionType
+from .enums import DebtStatus, ExtractionStatus, SettingsGroup, TransactionType
 
 T = TypeVar("T")
 
@@ -272,4 +273,22 @@ class AuditLogRepository(BaseRepository[AuditLog]):
     async def get_by_date_range(
         self, start_date: datetime, end_date: datetime, page: int = 1, per_page: int = 20
     ) -> Tuple[List[AuditLog], int]:
+        ...
+
+
+class SystemSettingRepository(BaseRepository[SystemSetting]):
+    @abstractmethod
+    async def get_by_key(self, key: str) -> Optional[SystemSetting]:
+        ...
+
+    @abstractmethod
+    async def get_by_group(self, group: SettingsGroup) -> List[SystemSetting]:
+        ...
+
+    @abstractmethod
+    async def get_all_settings(self) -> List[SystemSetting]:
+        ...
+
+    @abstractmethod
+    async def set_setting(self, key: str, value: str, group: SettingsGroup, description: str = "", is_secret: bool = False) -> SystemSetting:
         ...
