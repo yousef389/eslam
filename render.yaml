@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: sanitary-erp
+    runtime: python
+    plan: free
+    buildCommand: |
+      cd backend && pip install -r requirements.txt
+      cd ../frontend && npm install && npm run build
+    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sanitary-erp-db
+          property: connectionString
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "false"
+      - key: CORS_ORIGINS
+        value: '["*"]'
+      - key: PYTHON_VERSION
+        value: "3.12"
+
+databases:
+  - name: sanitary-erp-db
+    plan: free
+    databaseName: sanitary_erp
+    user: erp_user
