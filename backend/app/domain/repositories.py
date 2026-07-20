@@ -108,6 +108,10 @@ class SupplierRepository(BaseRepository[Supplier]):
 
 class SaleOrderRepository(BaseRepository[SaleOrder]):
     @abstractmethod
+    async def search(self, query: str, page: int = 1, per_page: int = 20) -> Tuple[List[SaleOrder], int]:
+        ...
+
+    @abstractmethod
     async def get_by_order_number(self, order_number: str) -> Optional[SaleOrder]:
         ...
 
@@ -127,6 +131,10 @@ class SaleOrderRepository(BaseRepository[SaleOrder]):
     async def get_daily_sales(
         self, date: datetime
     ) -> Decimal:
+        ...
+
+    @abstractmethod
+    async def get_recent(self, limit: int = 10) -> Tuple[List[SaleOrder], int]:
         ...
 
 
@@ -153,6 +161,10 @@ class PurchaseOrderRepository(BaseRepository[PurchaseOrder]):
     async def get_by_date_range(
         self, start_date: datetime, end_date: datetime, page: int = 1, per_page: int = 20
     ) -> Tuple[List[PurchaseOrder], int]:
+        ...
+
+    @abstractmethod
+    async def search(self, query: str, page: int = 1, per_page: int = 20) -> Tuple[List[PurchaseOrder], int]:
         ...
 
 
@@ -199,6 +211,10 @@ class CustomerDebtRepository(BaseRepository[CustomerDebt]):
     async def get_pending(self, page: int = 1, per_page: int = 20) -> Tuple[List[CustomerDebt], int]:
         ...
 
+    @abstractmethod
+    async def get_remaining_total(self) -> float:
+        ...
+
 
 class SupplierDebtRepository(BaseRepository[SupplierDebt]):
     @abstractmethod
@@ -213,6 +229,10 @@ class SupplierDebtRepository(BaseRepository[SupplierDebt]):
 
     @abstractmethod
     async def get_pending(self, page: int = 1, per_page: int = 20) -> Tuple[List[SupplierDebt], int]:
+        ...
+
+    @abstractmethod
+    async def get_remaining_total(self) -> float:
         ...
 
 

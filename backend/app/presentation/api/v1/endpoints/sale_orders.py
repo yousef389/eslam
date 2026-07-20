@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.application.dto import SaleOrderCreate
 from app.application.use_cases.sale_order_use_cases import (
     CreateSaleOrderUseCase,
+    DeleteSaleOrderUseCase,
     GetSaleOrderUseCase,
     ListSaleOrdersUseCase,
     UpdateSaleOrderStatusUseCase,
@@ -71,12 +72,16 @@ async def list_sale_orders(
     per_page: int = Query(20, ge=1, le=100),
     from_date: Optional[datetime] = Query(None),
     to_date: Optional[datetime] = Query(None),
+    search: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_user),
 ):
     repo = SaleOrderRepositoryImpl(db)
-    use_case = ListSaleOrdersUseCase(repo)
-    orders, total = await use_case.execute(page, per_page, from_date, to_date)
+    if search:
+        orders, total = await repo.search(search, page, per_page)
+    else:
+        use_case = ListSaleOrdersUseCase(repo)
+        orders, total = await use_case.execute(page, per_page, from_date, to_date)
     return {
         "success": True,
         "data": [_order_to_dict(o) for o in orders],
@@ -145,3 +150,18 @@ async def update_sale_order_status(
     use_case = UpdateSaleOrderStatusUseCase(repo)
     order = await use_case.execute(order_id, request.status)
     return {"success": True, "data": _order_to_dict(order), "message": "Order status updated"}
+
+
+@router.delete("/{order_id}")
+async def delete_sale_order(
+    order_id: str,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    _require_write(user)
+    orders_repo = SaleOrderRepositoryImpl(db)
+    items_repo = SaleOrderItemRepositoryImpl(db)
+    products_repo = ProductRepositoryImpl(db)
+    use_case = DeleteSaleOrderUseCase(orders_repo, items_repo, products_repo)
+    await use_case.execute(order_id)
+    return {"success": True, "message": "Sale order deleted and stock restored"}

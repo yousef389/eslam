@@ -186,3 +186,29 @@ class UpdateSaleOrderStatusUseCase:
         order.status = new_status
         order.updated_at = datetime.utcnow()
         return await self.sale_orders_repo.update(order)
+
+
+class DeleteSaleOrderUseCase:
+    def __init__(self, sale_orders_repo, sale_order_items_repo, products_repo):
+        self.sale_orders_repo = sale_orders_repo
+        self.sale_order_items_repo = sale_order_items_repo
+        self.products_repo = products_repo
+
+    async def execute(self, order_id: str) -> None:
+        order = await self.sale_orders_repo.get_by_id(order_id)
+        if not order:
+            raise NotFoundException("Sale order", order_id)
+
+        items, _ = await self.sale_order_items_repo.get_by_order(order_id)
+
+        for item in items:
+            product = await self.products_repo.get_by_id(item.product_id)
+            if product:
+                product.quantity_in_stock += item.quantity
+                product.updated_at = datetime.utcnow()
+                await self.products_repo.update(product)
+
+        for item in items:
+            await self.sale_order_items_repo.delete(item.id)
+
+        await self.sale_orders_repo.delete(order_id)

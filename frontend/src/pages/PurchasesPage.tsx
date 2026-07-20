@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Search, Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../lib/api'
 import { formatCurrency, formatDate } from '../lib/utils'
@@ -77,13 +77,16 @@ export default function PurchasesPage() {
   const [taxRate, setTaxRate] = useState('0.14')
   const [paymentMethod, setPaymentMethod] = useState('cash')
   const [notes, setNotes] = useState('')
+  const [search, setSearch] = useState('')
+  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const { data, isLoading } = useQuery<PaginatedResponse>({
-    queryKey: ['purchases', page, fromDate, toDate],
+    queryKey: ['purchases', page, fromDate, toDate, search],
     queryFn: () => {
       const params: Record<string, unknown> = { page, per_page: 20 }
       if (fromDate) params.from_date = fromDate
       if (toDate) params.to_date = toDate
+      if (search) params.search = search
       return api.get('/purchase-orders', { params }).then(res => res.data)
     },
   })
@@ -107,6 +110,16 @@ export default function PurchasesPage() {
       resetForm()
     },
     onError: () => toast.error('حدث خطأ أثناء إنشاء الفاتورة'),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/purchase-orders/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchases'] })
+      toast.success('تم حذف فاتورة الشراء بنجاح')
+      setDeleteId(null)
+    },
+    onError: () => toast.error('حدث خطأ أثناء الحذف'),
   })
 
   const resetForm = () => {
@@ -173,6 +186,18 @@ export default function PurchasesPage() {
     },
     { key: 'payment_method', header: 'طريقة الدفع', render: (item: PurchaseOrder) => ({ cash: 'نقدي', bank_transfer: 'تحويل بنكي', credit_card: 'بطاقة ائتمان', cheque: 'شيك' }[item.payment_method] || item.payment_method) },
     { key: 'created_at', header: 'التاريخ', render: (item: PurchaseOrder) => formatDate(item.created_at) },
+    {
+      key: 'actions', header: 'إجراءات', render: (item: PurchaseOrder) => (
+        <div className="flex gap-2" onClick={e => e.stopPropagation()}>
+          <button onClick={() => navigate(`/purchases/${item.id}`)} className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg" title="طباعة">
+            <Printer size={16} />
+          </button>
+          <button onClick={() => setDeleteId(item.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg" title="حذف">
+            <Trash2 size={16} />
+          </button>
+        </div>
+      ),
+    },
   ]
 
   return (
@@ -187,7 +212,20 @@ export default function PurchasesPage() {
         }
       />
 
-      <div className="flex gap-4 mb-4">
+      <div className="flex gap-4 mb-4 items-end">
+        <div className="flex-1 max-w-sm">
+          <label className="block text-sm font-medium mb-1">بحث</label>
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="رقم الفاتورة أو اسم المورد..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1) }}
+              className="w-full pr-10 pl-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
         <div>
           <label className="block text-sm font-medium mb-1">من تاريخ</label>
           <input type="date" value={fromDate} onChange={e => { setFromDate(e.target.value); setPage(1) }} className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -207,6 +245,20 @@ export default function PurchasesPage() {
           <button onClick={() => setPage(p => p + 1)} disabled={page >= Math.ceil(meta.total / 20)} className="px-3 py-1 border rounded-lg disabled:opacity-50 hover:bg-gray-50">التالي</button>
         </div>
       )}
+
+      <Dialog isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="تأكيد الحذف" maxWidth="max-w-sm">
+        <p className="mb-4">هل أنت متأكد من حذف فاتورة الشراء này؟</p>
+        <div className="flex justify-end gap-2">
+          <button onClick={() => setDeleteId(null)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">إلغاء</button>
+          <button
+            onClick={() => deleteId && deleteMutation.mutate(deleteId)}
+            disabled={deleteMutation.isPending}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+          >
+            {deleteMutation.isPending ? 'جاري الحذف...' : 'حذف'}
+          </button>
+        </div>
+      </Dialog>
 
       <Dialog isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm() }} title="فاتورة مشتريات جديدة" maxWidth="max-w-3xl">
         <form onSubmit={handleSubmit} className="space-y-4">

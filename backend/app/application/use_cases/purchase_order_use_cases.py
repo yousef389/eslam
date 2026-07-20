@@ -28,6 +28,19 @@ class ListPurchaseOrdersUseCase:
         return await self.purchase_orders_repo.get_all(page, per_page)
 
 
+class SearchPurchaseOrdersUseCase:
+    def __init__(self, purchase_orders_repo):
+        self.purchase_orders_repo = purchase_orders_repo
+
+    async def execute(
+        self,
+        query: str,
+        page: int = 1,
+        per_page: int = 20,
+    ) -> Tuple[list, int]:
+        return await self.purchase_orders_repo.search(query, page, per_page)
+
+
 class GetPurchaseOrderUseCase:
     def __init__(self, purchase_orders_repo, purchase_order_items_repo):
         self.purchase_orders_repo = purchase_orders_repo
@@ -192,3 +205,31 @@ class UpdatePurchaseOrderStatusUseCase:
         order.status = new_status
         order.updated_at = datetime.utcnow()
         return await self.purchase_orders_repo.update(order)
+
+
+class DeletePurchaseOrderUseCase:
+    def __init__(self, purchase_orders_repo, purchase_order_items_repo, products_repo):
+        self.purchase_orders_repo = purchase_orders_repo
+        self.purchase_order_items_repo = purchase_order_items_repo
+        self.products_repo = products_repo
+
+    async def execute(self, order_id: str) -> None:
+        order = await self.purchase_orders_repo.get_by_id(order_id)
+        if not order:
+            raise NotFoundException("Purchase order", order_id)
+
+        items, _ = await self.purchase_order_items_repo.get_by_order(order_id)
+
+        if order.status == OrderStatus.DELIVERED:
+            now = datetime.utcnow()
+            for item in items:
+                product = await self.products_repo.get_by_id(item.product_id)
+                if product:
+                    product.quantity_in_stock -= item.quantity
+                    product.updated_at = now
+                    await self.products_repo.update(product)
+
+        for item in items:
+            await self.purchase_order_items_repo.delete(item.id)
+
+        await self.purchase_orders_repo.delete(order_id)

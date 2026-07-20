@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Users, Truck, ShoppingCart,
   BarChart3, Brain, LogOut, Menu, X,
-  Landmark, Settings
+  Landmark, Settings, Search, Bell
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import api from '../lib/api'
@@ -27,6 +27,7 @@ const navigation: NavItem[] = [
   { name: 'الموردين', href: '/suppliers', icon: Truck },
   { name: 'مبيعات', href: '/sales', icon: ShoppingCart },
   { name: 'مشتريات', href: '/purchases', icon: ShoppingCart },
+  { name: 'المخزون', href: '/inventory', icon: Package },
   {
     name: 'الحسابات', href: '/accounting', icon: Landmark, children: [
       { name: 'حسابات العملاء', href: '/accounting/customers' },
@@ -54,6 +55,11 @@ function findPageName(pathname: string): string {
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({})
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSearch, setShowSearch] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
+  const notificationRef = useRef<HTMLDivElement>(null)
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -61,6 +67,30 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     queryKey: ['user'],
     queryFn: () => api.get('/auth/me').then(res => res.data),
   })
+
+  const { data: searchResults } = useQuery({
+    queryKey: ['global-search', searchQuery],
+    queryFn: () => api.get(`/search/?q=${searchQuery}`).then(res => res.data.data),
+    enabled: searchQuery.length >= 2,
+  })
+
+  const { data: dashboardStats } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: () => api.get('/dashboard/stats').then(res => res.data.data),
+  })
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearch(false)
+      }
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleLogout = () => {
     localStorage.removeItem('access_token')
@@ -153,7 +183,130 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <h2 className="text-lg font-semibold text-gray-700">
             {findPageName(location.pathname)}
           </h2>
+          
+          {/* Global Search */}
+          <div ref={searchRef} className="relative flex-1 max-w-md mx-4">
+            <div className="relative">
+              <Search size={18} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="بحث عن منتج، عميل، مورد..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setShowSearch(e.target.value.length >= 2)
+                }}
+                onFocus={() => searchQuery.length >= 2 && setShowSearch(true)}
+                className="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('')
+                    setShowSearch(false)
+                  }}
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+            
+            {/* Search Results Dropdown */}
+            {showSearch && searchResults && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+                {(() => {
+                  const results = Array.isArray(searchResults) ? searchResults : []
+                  if (results.length === 0) return <div className="px-4 py-3 text-sm text-gray-500">لا توجد نتائج</div>
+                  const grouped: Record<string, typeof results> = {}
+                  results.forEach((r: any) => { if (!grouped[r.type]) grouped[r.type] = []; grouped[r.type].push(r) })
+                  const typeLabels: Record<string, string> = {
+                    product: 'المنتجات', customer: 'العملاء', supplier: 'الموردين',
+                    sale_order: 'فواتير البيع', purchase_order: 'فواتير الشراء',
+                  }
+                  return Object.entries(grouped).map(([type, items]) => (
+                    <div key={type} className="border-b border-gray-100 last:border-b-0">
+                      <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500">
+                        {typeLabels[type] || type}
+                      </div>
+                      {items.map((item: any) => (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            navigate(item.link)
+                            setShowSearch(false)
+                            setSearchQuery('')
+                          }}
+                          className="w-full px-4 py-3 text-right hover:bg-gray-50 flex flex-col"
+                        >
+                          <span className="text-sm font-medium text-gray-800">{item.name}</span>
+                          {item.subtitle && (
+                            <span className="text-xs text-gray-500 mt-0.5">{item.subtitle}</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  ))
+                  })()}
+              </div>
+            )}
+          </div>
+
           <div className="flex items-center gap-4">
+            {/* Notifications Bell */}
+            <div ref={notificationRef} className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg"
+              >
+                <Bell size={20} />
+                {dashboardStats?.low_stock_count > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {dashboardStats.low_stock_count}
+                  </span>
+                )}
+              </button>
+              
+              {/* Notifications Dropdown */}
+              {showNotifications && (
+                <div className="absolute top-full left-0 mt-1 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <div className="px-4 py-3 border-b border-gray-200 font-semibold text-sm text-gray-700">
+                    الإشعارات
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {/* Low Stock Alerts */}
+                    {dashboardStats?.low_stock_items && dashboardStats.low_stock_items.length > 0 ? (
+                      <div>
+                        <div className="px-4 py-2 bg-orange-50 text-xs font-semibold text-orange-600 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                          تنبيه المخزون
+                        </div>
+                        {dashboardStats.low_stock_items.map((item: any) => (
+                          <button
+                            key={item.id}
+                            onClick={() => {
+                              navigate(`/products/${item.id}`)
+                              setShowNotifications(false)
+                            }}
+                            className="w-full px-4 py-3 text-right hover:bg-gray-50 flex flex-col border-b border-gray-100"
+                          >
+                            <span className="text-sm font-medium text-gray-800">{item.name}</span>
+                            <span className="text-xs text-red-500 mt-0.5">
+                              المخزون: {item.quantity} {item.unit}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="px-4 py-6 text-center text-gray-500 text-sm">
+                        لا توجد إشعارات جديدة
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <span className="text-sm text-gray-600">
               مرحباً {user?.data?.full_name || 'المستخدم'}
             </span>

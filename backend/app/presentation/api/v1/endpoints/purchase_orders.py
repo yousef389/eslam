@@ -8,8 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.application.dto import PurchaseOrderCreate
 from app.application.use_cases.purchase_order_use_cases import (
     CreatePurchaseOrderUseCase,
+    DeletePurchaseOrderUseCase,
     GetPurchaseOrderUseCase,
     ListPurchaseOrdersUseCase,
+    SearchPurchaseOrdersUseCase,
     UpdatePurchaseOrderStatusUseCase,
 )
 from app.core.dependencies import get_current_user
@@ -71,12 +73,17 @@ async def list_purchase_orders(
     per_page: int = Query(20, ge=1, le=100),
     from_date: Optional[datetime] = Query(None),
     to_date: Optional[datetime] = Query(None),
+    search: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     user=Depends(get_current_user),
 ):
     repo = PurchaseOrderRepositoryImpl(db)
-    use_case = ListPurchaseOrdersUseCase(repo)
-    orders, total = await use_case.execute(page, per_page, from_date, to_date)
+    if search:
+        use_case = SearchPurchaseOrdersUseCase(repo)
+        orders, total = await use_case.execute(search, page, per_page)
+    else:
+        use_case = ListPurchaseOrdersUseCase(repo)
+        orders, total = await use_case.execute(page, per_page, from_date, to_date)
     return {
         "success": True,
         "data": [_order_to_dict(o) for o in orders],
@@ -147,3 +154,18 @@ async def update_purchase_order_status(
     use_case = UpdatePurchaseOrderStatusUseCase(orders_repo, products_repo)
     order = await use_case.execute(order_id, request.status, items_repo)
     return {"success": True, "data": _order_to_dict(order), "message": "Order status updated"}
+
+
+@router.delete("/{order_id}")
+async def delete_purchase_order(
+    order_id: str,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    _require_write(user)
+    orders_repo = PurchaseOrderRepositoryImpl(db)
+    items_repo = PurchaseOrderItemRepositoryImpl(db)
+    products_repo = ProductRepositoryImpl(db)
+    use_case = DeletePurchaseOrderUseCase(orders_repo, items_repo, products_repo)
+    await use_case.execute(order_id)
+    return {"success": True, "message": "Purchase order deleted"}

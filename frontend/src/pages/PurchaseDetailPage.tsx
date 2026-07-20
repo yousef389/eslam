@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight, ChevronLeft } from 'lucide-react'
+import { ArrowRight, ChevronLeft, Printer, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../lib/api'
 import { formatCurrency, formatDate } from '../lib/utils'
@@ -100,6 +100,12 @@ export default function PurchaseDetailPage() {
     onError: () => toast.error('حدث خطأ أثناء تحديث الحالة'),
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: () => api.delete(`/purchase-orders/${id}`),
+    onSuccess: () => { toast.success('تم حذف فاتورة الشراء'); navigate('/purchases') },
+    onError: () => toast.error('حدث خطأ أثناء الحذف'),
+  })
+
   if (isLoading) return <LoadingSpinner />
   if (!data) return <div className="text-center py-8 text-gray-500">الفاتورة غير موجودة</div>
 
@@ -120,6 +126,17 @@ export default function PurchaseDetailPage() {
           <div className="flex gap-2">
             <button onClick={() => navigate('/purchases')} className="flex items-center gap-2 border px-4 py-2 rounded-lg hover:bg-gray-50">
               <ArrowRight size={18} />رجوع
+            </button>
+            <button onClick={() => window.print()} className="flex items-center gap-2 border px-4 py-2 rounded-lg hover:bg-gray-50">
+              <Printer size={18} />طباعة
+            </button>
+            {order.status !== 'cancelled' && order.status !== 'delivered' && (
+              <button onClick={() => { if(confirm('هل أنت متأكد من إلغاء الفاتورة؟')) statusMutation.mutate('cancelled') }} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                <XCircle size={18} />إلغاء
+              </button>
+            )}
+            <button onClick={() => { if(confirm('هل أنت متأكد من حذف فاتورة الشراء؟')) deleteMutation.mutate() }} disabled={deleteMutation.isPending} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50">
+              <XCircle size={18} />حذف
             </button>
             {next && (
               <button onClick={() => statusMutation.mutate(next)} disabled={statusMutation.isPending} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50">
@@ -191,6 +208,13 @@ export default function PurchaseDetailPage() {
           </table>
         </div>
       </div>
+      <style>{`
+        @media print {
+          nav, aside, .no-print { display: none !important; }
+          main { margin: 0 !important; padding: 0 !important; }
+          .print-only { display: block !important; }
+        }
+      `}</style>
     </div>
   )
 }

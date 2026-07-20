@@ -137,3 +137,14 @@ class SupplierDebtRepositoryImpl(SupplierDebtRepository):
         result = await self._session.execute(stmt)
         models = list(result.scalars().all())
         return [_model_to_entity(m) for m in models], total
+
+    async def get_remaining_total(self) -> float:
+        stmt = select(func.coalesce(func.sum(SupplierDebtModel.remaining), 0)).where(
+            SupplierDebtModel.status.in_([
+                DebtStatus.PENDING.value,
+                DebtStatus.PARTIAL.value,
+                DebtStatus.OVERDUE.value,
+            ])
+        )
+        result = await self._session.execute(stmt)
+        return float(result.scalar() or 0)

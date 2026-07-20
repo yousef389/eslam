@@ -10,6 +10,7 @@ from app.domain.enums import OrderStatus, PaymentMethod
 from app.domain.repositories import PurchaseOrderRepository
 from app.domain.value_objects import Money
 from app.infrastructure.models.purchase_orders import PurchaseOrderModel
+from app.infrastructure.models.suppliers import SupplierModel
 
 from .base import BaseRepositoryImpl
 
@@ -129,6 +130,30 @@ class PurchaseOrderRepositoryImpl(PurchaseOrderRepository):
         stmt = (
             select(PurchaseOrderModel)
             .where(base_filter)
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+        )
+        result = await self._session.execute(stmt)
+        models = list(result.scalars().all())
+        return [_model_to_entity(m) for m in models], total
+
+    async def search(self, query: str, page: int = 1, per_page: int = 20) -> Tuple[List[PurchaseOrder], int]:
+        like_pattern = f"%{query}%"
+        base_filter = (
+            PurchaseOrderModel.order_number.ilike(like_pattern)
+            | PurchaseOrderModel.supplier_id.in_(
+                select(SupplierModel.id).where(SupplierModel.name.ilike(like_pattern))
+            )
+        )
+
+        count_stmt = select(func.count()).select_from(PurchaseOrderModel).where(base_filter)
+        total_result = await self._session.execute(count_stmt)
+        total = total_result.scalar() or 0
+
+        stmt = (
+            select(PurchaseOrderModel)
+            .where(base_filter)
+            .order_by(PurchaseOrderModel.created_at.desc())
             .offset((page - 1) * per_page)
             .limit(per_page)
         )

@@ -9,6 +9,7 @@ from app.domain.entities import SaleOrder
 from app.domain.enums import OrderStatus, PaymentMethod
 from app.domain.repositories import SaleOrderRepository
 from app.domain.value_objects import Money
+from app.infrastructure.models.customers import CustomerModel
 from app.infrastructure.models.sale_orders import SaleOrderModel
 
 from .base import BaseRepositoryImpl
@@ -61,6 +62,29 @@ class SaleOrderRepositoryImpl(SaleOrderRepository):
 
     async def get_all(self, page: int = 1, per_page: int = 20) -> Tuple[List[SaleOrder], int]:
         models, total = await self._repo.get_all(page, per_page)
+        return [_model_to_entity(m) for m in models], total
+
+    async def search(self, query: str, page: int = 1, per_page: int = 20) -> Tuple[List[SaleOrder], int]:
+        pattern = f"%{query}%"
+        base_filter = (
+            SaleOrderModel.order_number.ilike(pattern)
+            | SaleOrderModel.customer_id.in_(
+                select(CustomerModel.id).where(CustomerModel.name.ilike(pattern))
+            )
+        )
+
+        count_stmt = select(func.count()).select_from(SaleOrderModel).where(base_filter)
+        total_result = await self._session.execute(count_stmt)
+        total = total_result.scalar() or 0
+
+        stmt = (
+            select(SaleOrderModel)
+            .where(base_filter)
+            .offset((page - 1) * per_page)
+            .limit(per_page)
+        )
+        result = await self._session.execute(stmt)
+        models = list(result.scalars().all())
         return [_model_to_entity(m) for m in models], total
 
     async def create(self, entity: SaleOrder) -> SaleOrder:
@@ -148,3 +172,13 @@ class SaleOrderRepositoryImpl(SaleOrderRepository):
         result = await self._session.execute(stmt)
         total = result.scalar()
         return Decimal(str(total))
+
+    async def get_recent(self, limit: int = 10) -> Tuple[List[SaleOrder], int]:
+        stmt = (
+            select(SaleOrderModel)
+            .order_by(SaleOrderModel.created_at.desc())
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        models = list(result.scalars().all())
+        return [_model_to_entity(m) for m in models], len(models)

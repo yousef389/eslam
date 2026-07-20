@@ -14,6 +14,7 @@ from app.presentation.api.v1.endpoints import (
     accounting_cashbox,
     accounting_reports,
     extractions,
+    search,
     settings,
 )
 
@@ -31,4 +32,5 @@ router.include_router(accounting_suppliers.router, prefix="/accounting/suppliers
 router.include_router(accounting_cashbox.router, prefix="/accounting/cashbox", tags=["Cashbox"])
 router.include_router(accounting_reports.router, prefix="/accounting/reports", tags=["Financial Reports"])
 router.include_router(extractions.router, prefix="/extractions", tags=["AI Extractions"])
+router.include_router(search.router, prefix="/search", tags=["Search"])
 router.include_router(settings.router, prefix="/settings", tags=["System Settings"])

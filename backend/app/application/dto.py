@@ -289,6 +289,13 @@ class DashboardStats(BaseModel):
     total_customers: int = 0
     low_stock_items: int = 0
     pending_orders: int = 0
+    total_purchases: Decimal = Decimal("0")
+    net_profit: Decimal = Decimal("0")
+    cashbox_balance: Decimal = Decimal("0")
+    customer_debts_total: Decimal = Decimal("0")
+    supplier_debts_total: Decimal = Decimal("0")
+    invoice_count: int = 0
+    recent_activities: list = []
 
 
 # ── Accounting DTOs ────────────────────────────────────────────────────────────

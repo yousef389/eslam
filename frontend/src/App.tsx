@@ -18,6 +18,7 @@ import PurchaseDetailPage from './pages/PurchaseDetailPage'
 import AccountingCustomersPage from './pages/AccountingCustomersPage'
 import AccountingSuppliersPage from './pages/AccountingSuppliersPage'
 import CashboxPage from './pages/CashboxPage'
+import InventoryPage from './pages/InventoryPage'
 import ReportsPage from './pages/ReportsPage'
 import AIPage from './pages/AIPage'
 import SettingsPage from './pages/SettingsPage'
@@ -56,6 +57,7 @@ function App() {
             <Route path="/accounting/customers" element={<ProtectedRoute><AccountingCustomersPage /></ProtectedRoute>} />
             <Route path="/accounting/suppliers" element={<ProtectedRoute><AccountingSuppliersPage /></ProtectedRoute>} />
             <Route path="/accounting/cashbox" element={<ProtectedRoute><CashboxPage /></ProtectedRoute>} />
+            <Route path="/inventory" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
             <Route path="/ai" element={<ProtectedRoute><AIPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />

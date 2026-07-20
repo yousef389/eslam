@@ -1,28 +1,14 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight, Edit, Trash2, Plus, CreditCard } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { ArrowRight, Phone, Mail, MapPin, CreditCard, Receipt, Edit, Plus, Truck } from 'lucide-react'
 import api from '../lib/api'
 import { formatCurrency, formatDate } from '../lib/utils'
 import PageHeader from '../components/PageHeader'
-import LoadingSpinner from '../components/LoadingSpinner'
-import DataTable from '../components/DataTable'
 import Dialog from '../components/Dialog'
+import LoadingSpinner from '../components/LoadingSpinner'
 
-interface Supplier {
-  id: string
-  name: string
-  phone: string
-  email?: string
-  address?: string
-  tax_number?: string
-  payment_terms_days: number
-  is_active: boolean
-  notes?: string
-  created_at: string
-  updated_at: string
-}
 
 interface Debt {
   id: string
@@ -34,6 +20,8 @@ interface Debt {
   due_date?: string
   created_at: string
 }
+
+
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-700',
@@ -49,130 +37,86 @@ const statusLabels: Record<string, string> = {
   overdue: 'متأخر',
 }
 
+
 export default function SupplierDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [editMode, setEditMode] = useState(false)
-  const [showDelete, setShowDelete] = useState(false)
-  const [showDebt, setShowDebt] = useState(false)
-  const [showPayment, setShowPayment] = useState(false)
-  const [form, setForm] = useState<Partial<Supplier>>({})
-  const [debtForm, setDebtForm] = useState({ amount: '', description: '', due_date: '' })
-  const [paymentForm, setPaymentForm] = useState({ debt_id: '', amount: '', payment_method: 'cash', notes: '' })
+  const [activeTab, setActiveTab] = useState<'info' | 'debts' | 'orders'>('info')
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false)
+  const [selectedDebtId, setSelectedDebtId] = useState<string>('')
+  const [paymentForm, setPaymentForm] = useState({ amount: '', payment_method: 'cash', notes: '' })
 
-  const { data: supplierData, isLoading } = useQuery({
+  const { data: supplier, isLoading } = useQuery({
     queryKey: ['supplier', id],
     queryFn: () => api.get(`/suppliers/${id}`).then(res => res.data.data),
     enabled: !!id,
   })
 
-  const { data: debtsData } = useQuery({
-    queryKey: ['supplier-debts', id],
-    queryFn: () => api.get('/accounting/suppliers', { params: { per_page: 100 } }).then(res => res.data.data),
+  const { data: statement, isLoading: statementLoading } = useQuery({
+    queryKey: ['supplier-statement', id],
+    queryFn: () => api.get(`/suppliers/${id}/statement`, { params: { page: 1, per_page: 100 } }).then(res => res.data.data),
     enabled: !!id,
   })
 
-  const updateMutation = useMutation({
-    mutationFn: (payload: Record<string, unknown>) => api.put(`/suppliers/${id}`, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supplier', id] })
-      toast.success('تم تحديث المورد بنجاح')
-      setEditMode(false)
-    },
-    onError: () => toast.error('حدث خطأ أثناء تحديث المورد'),
+  const { data: purchaseOrders, isLoading: ordersLoading } = useQuery({
+    queryKey: ['supplier-purchase-orders', id],
+    queryFn: () => api.get('/purchase-orders', { params: { supplier_id: id, per_page: 100 } }).then(res => res.data.data),
+    enabled: !!id && activeTab === 'orders',
   })
 
-  const deleteMutation = useMutation({
-    mutationFn: () => api.delete(`/suppliers/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['suppliers'] })
-      toast.success('تم حذف المورد بنجاح')
-      navigate('/suppliers')
-    },
-    onError: () => toast.error('حدث خطأ أثناء حذف المورد'),
-  })
-
-  const createDebtMutation = useMutation({
-    mutationFn: (payload: Record<string, unknown>) => api.post('/accounting/suppliers', payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supplier-statement', id] })
-      queryClient.invalidateQueries({ queryKey: ['supplier', id] })
-      toast.success('تم إنشاء الدين بنجاح')
-      setShowDebt(false)
-      setDebtForm({ amount: '', description: '', due_date: '' })
-    },
-    onError: () => toast.error('حدث خطأ أثناء إنشاء الدين'),
-  })
-
-  const createPaymentMutation = useMutation({
-    mutationFn: (payload: Record<string, unknown>) => api.post('/accounting/suppliers/payments', payload),
+  const paymentMutation = useMutation({
+    mutationFn: (payload: { debt_id: string; amount: number; payment_method: string; notes?: string }) =>
+      api.post('/accounting/suppliers/payments', payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supplier-statement', id] })
       queryClient.invalidateQueries({ queryKey: ['supplier', id] })
       toast.success('تم تسجيل الدفعة بنجاح')
-      setShowPayment(false)
-      setPaymentForm({ debt_id: '', amount: '', payment_method: 'cash', notes: '' })
+      setShowPaymentDialog(false)
+      setPaymentForm({ amount: '', payment_method: 'cash', notes: '' })
+      setSelectedDebtId('')
     },
     onError: () => toast.error('حدث خطأ أثناء تسجيل الدفعة'),
   })
 
-  if (isLoading) return <LoadingSpinner />
-  if (!supplierData) return <div className="text-center py-8 text-gray-500">المورد غير موجود</div>
-
-  const supplier: Supplier = supplierData
-  const debts = (debtsData || []).filter((d: Debt & { supplier_id?: string }) => d.supplier_id === id)
-
-  const handleSave = () => {
-    updateMutation.mutate(form as Record<string, unknown>)
+  const handleOpenPaymentDialog = (debtId?: string) => {
+    if (debtId) {
+      setSelectedDebtId(debtId)
+      const debt = statement?.debts?.find((d: Debt) => d.id === debtId)
+      if (debt) {
+        setPaymentForm({ ...paymentForm, amount: String(debt.remaining) })
+      }
+    } else {
+      setSelectedDebtId('')
+      setPaymentForm({ amount: '', payment_method: 'cash', notes: '' })
+    }
+    setShowPaymentDialog(true)
   }
 
-  const startEdit = () => {
-    setForm({
-      name: supplier.name,
-      phone: supplier.phone,
-      email: supplier.email,
-      address: supplier.address,
-      tax_number: supplier.tax_number,
-      payment_terms_days: supplier.payment_terms_days,
-      notes: supplier.notes,
-    })
-    setEditMode(true)
-  }
-
-  const handleCreateDebt = (e: React.FormEvent) => {
+  const handleSubmitPayment = (e: React.FormEvent) => {
     e.preventDefault()
-    createDebtMutation.mutate({
-      supplier_id: id,
-      amount: Number(debtForm.amount),
-      description: debtForm.description,
-      due_date: debtForm.due_date || undefined,
-    })
-  }
-
-  const handleCreatePayment = (e: React.FormEvent) => {
-    e.preventDefault()
-    createPaymentMutation.mutate({
-      debt_id: paymentForm.debt_id,
+    paymentMutation.mutate({
+      debt_id: selectedDebtId,
       amount: Number(paymentForm.amount),
       payment_method: paymentForm.payment_method,
       notes: paymentForm.notes || undefined,
     })
   }
 
-  const debtColumns = [
-    { key: 'description', header: 'الوصف', render: (item: Debt) => item.description },
-    { key: 'amount', header: 'المبلغ', render: (item: Debt) => formatCurrency(item.amount) },
-    { key: 'paid_amount', header: 'المدفوع', render: (item: Debt) => formatCurrency(item.paid_amount) },
-    { key: 'remaining', header: 'المتبقي', render: (item: Debt) => formatCurrency(item.remaining) },
-    {
-      key: 'status', header: 'الحالة', render: (item: Debt) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[item.status] || ''}`}>
-          {statusLabels[item.status] || item.status}
-        </span>
-      ),
-    },
-    { key: 'due_date', header: 'تاريخ الاستحقاق', render: (item: Debt) => item.due_date ? formatDate(item.due_date) : '-' },
+  if (isLoading) return <LoadingSpinner />
+  if (!supplier) return <div className="text-center py-8 text-gray-500">المورد غير موجود</div>
+
+  const debts = statement?.debts || []
+  const unpaidDebts = debts.filter((d: Debt) => d.status !== 'paid')
+
+  const totalRemaining = debts.reduce((sum: number, d: Debt) => sum + d.remaining, 0)
+  const totalPaid = debts.reduce((sum: number, d: Debt) => sum + d.paid_amount, 0)
+  const totalDebts = debts.reduce((sum: number, d: Debt) => sum + d.amount, 0)
+
+  const tabs = [
+    { key: 'info', label: 'البيانات' },
+    { key: 'debts', label: 'المديونيات' },
+    { key: 'orders', label: 'فواتير الشراء' },
   ]
 
   return (
@@ -182,141 +126,318 @@ export default function SupplierDetailPage() {
         subtitle={supplier.phone}
         action={
           <div className="flex gap-2">
-            <button onClick={() => navigate('/suppliers')} className="flex items-center gap-2 border px-4 py-2 rounded-lg hover:bg-gray-50">
-              <ArrowRight size={18} />رجوع
+            <button
+              onClick={() => navigate('/suppliers')}
+              className="flex items-center gap-2 border px-4 py-2 rounded-lg hover:bg-gray-50"
+            >
+              <ArrowRight size={18} />
+              رجوع
             </button>
-            <button onClick={() => setShowDebt(true)} className="flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700">
-              <Plus size={18} />دين جديد
+            <button
+              onClick={() => navigate(`/suppliers/${id}/edit`)}
+              className="flex items-center gap-2 border px-4 py-2 rounded-lg hover:bg-gray-50"
+            >
+              <Edit size={18} />
+              تعديل
             </button>
-            <button onClick={() => setShowPayment(true)} className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-              <CreditCard size={18} />تسجيل دفعة
-            </button>
-            <button onClick={startEdit} className="flex items-center gap-2 border px-4 py-2 rounded-lg hover:bg-gray-50">
-              <Edit size={18} />تعديل
-            </button>
-            <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
-              <Trash2 size={18} />حذف
+            <button
+              onClick={() => handleOpenPaymentDialog()}
+              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+            >
+              <Plus size={18} />
+              سداد دفعة
             </button>
           </div>
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border space-y-3">
-          <h3 className="text-lg font-semibold">معلومات المورد</h3>
-          <div className="space-y-2">
-            <div><span className="text-sm text-gray-500">الاسم:</span><p className="font-medium">{supplier.name}</p></div>
-            <div><span className="text-sm text-gray-500">الهاتف:</span><p className="font-medium">{supplier.phone}</p></div>
-            <div><span className="text-sm text-gray-500">البريد:</span><p className="font-medium">{supplier.email || '-'}</p></div>
-            <div><span className="text-sm text-gray-500">العنوان:</span><p className="font-medium">{supplier.address || '-'}</p></div>
-            <div><span className="text-sm text-gray-500">الرقم الضريبي:</span><p className="font-medium">{supplier.tax_number || '-'}</p></div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white p-5 rounded-lg shadow-sm border">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-gray-500">إجمالي المستحقات</span>
+            <div className="p-2 bg-red-100 rounded-lg">
+              <Receipt size={18} className="text-red-600" />
+            </div>
           </div>
+          <p className="text-2xl font-bold text-red-600">{formatCurrency(totalDebts)}</p>
         </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border space-y-3">
-          <h3 className="text-lg font-semibold">الشروط</h3>
-          <div className="space-y-2">
-            <div><span className="text-sm text-gray-500">أيام الدفع:</span><p className="font-medium">{supplier.payment_terms_days} يوم</p></div>
-            <div><span className="text-sm text-gray-500">الحالة:</span>
-              <p className={`font-medium ${supplier.is_active ? 'text-green-600' : 'text-gray-500'}`}>{supplier.is_active ? 'نشط' : 'غير نشط'}</p>
+        <div className="bg-white p-5 rounded-lg shadow-sm border">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-gray-500">المدفوع</span>
+            <div className="p-2 bg-green-100 rounded-lg">
+              <CreditCard size={18} className="text-green-600" />
             </div>
-            <div><span className="text-sm text-gray-500">تاريخ الإنشاء:</span><p className="font-medium">{formatDate(supplier.created_at)}</p></div>
-            {supplier.notes && <div><span className="text-sm text-gray-500">ملاحظات:</span><p className="font-medium">{supplier.notes}</p></div>}
           </div>
+          <p className="text-2xl font-bold text-green-600">{formatCurrency(totalPaid)}</p>
         </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border space-y-3">
-          <h3 className="text-lg font-semibold">ملخص الديون</h3>
-          <div className="space-y-2">
-            <div><span className="text-sm text-gray-500">إجمالي الديون:</span>
-              <p className="font-semibold text-lg text-orange-600">
-                {formatCurrency(debts.reduce((sum: number, d: Debt) => sum + d.remaining, 0))}
-              </p>
-            </div>
-            <div><span className="text-sm text-gray-500">عدد الديون:</span><p className="font-medium">{debts.length}</p></div>
-            <div><span className="text-sm text-gray-500">ديون معلقة:</span>
-              <p className="font-medium text-yellow-600">{debts.filter((d: Debt) => d.status === 'pending').length}</p>
+        <div className="bg-white p-5 rounded-lg shadow-sm border">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-gray-500">المتبقي</span>
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <Receipt size={18} className="text-orange-600" />
             </div>
           </div>
+          <p className="text-2xl font-bold text-orange-600">{formatCurrency(totalRemaining)}</p>
+        </div>
+        <div className="bg-white p-5 rounded-lg shadow-sm border">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-gray-500">عدد الفواتير</span>
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Truck size={18} className="text-blue-600" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-blue-600">{debts.length}</p>
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-sm border">
-        <h3 className="text-lg font-semibold mb-4">كشف الحساب</h3>
-        <DataTable columns={debtColumns} data={debts as unknown as Record<string, unknown>[]} emptyMessage="لا توجد ديون" />
+      <div className="bg-white rounded-lg shadow-sm border">
+        <div className="flex border-b">
+          {tabs.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key as typeof activeTab)}
+              className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === tab.key
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="p-6">
+          {activeTab === 'info' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">المعلومات الأساسية</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-100 rounded-lg"><CreditCard size={16} className="text-gray-600" /></div>
+                    <div>
+                      <p className="text-xs text-gray-500">الاسم</p>
+                      <p className="font-medium">{supplier.name}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-100 rounded-lg"><Phone size={16} className="text-gray-600" /></div>
+                    <div>
+                      <p className="text-xs text-gray-500">الهاتف</p>
+                      <p className="font-medium">{supplier.phone}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-100 rounded-lg"><Mail size={16} className="text-gray-600" /></div>
+                    <div>
+                      <p className="text-xs text-gray-500">البريد الإلكتروني</p>
+                      <p className="font-medium">{supplier.email || '-'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-100 rounded-lg"><MapPin size={16} className="text-gray-600" /></div>
+                    <div>
+                      <p className="text-xs text-gray-500">العنوان</p>
+                      <p className="font-medium">{supplier.address || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">معلومات مالية وإدارية</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-gray-500">الرقم الضريبي</span>
+                    <span className="font-medium">{supplier.tax_number || '-'}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-gray-500">أيام شروط الدفع</span>
+                    <span className="font-medium">{supplier.payment_terms_days} يوم</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-gray-500">الحالة</span>
+                    <span className={`font-medium ${supplier.is_active ? 'text-green-600' : 'text-gray-500'}`}>
+                      {supplier.is_active ? 'نشط' : 'غير نشط'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-gray-500">تاريخ الإنشاء</span>
+                    <span className="font-medium">{formatDate(supplier.created_at)}</span>
+                  </div>
+                  {supplier.notes && (
+                    <div className="py-2">
+                      <p className="text-gray-500 text-sm mb-1">ملاحظات</p>
+                      <p className="font-medium">{supplier.notes}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'debts' && (
+            <div>
+              {statementLoading ? (
+                <LoadingSpinner />
+              ) : debts.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">لا توجد مديونيات</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-gray-50">
+                        <th className="text-right py-3 px-4 font-medium text-gray-600">الوصف</th>
+                        <th className="text-right py-3 px-4 font-medium text-gray-600">المبلغ</th>
+                        <th className="text-right py-3 px-4 font-medium text-gray-600">المدفوع</th>
+                        <th className="text-right py-3 px-4 font-medium text-gray-600">المتبقي</th>
+                        <th className="text-right py-3 px-4 font-medium text-gray-600">الحالة</th>
+                        <th className="text-right py-3 px-4 font-medium text-gray-600">تاريخ الاستحقاق</th>
+                        <th className="text-right py-3 px-4 font-medium text-gray-600">إجراءات</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {debts.map((debt: Debt) => (
+                        <tr key={debt.id} className="border-b hover:bg-gray-50">
+                          <td className="py-3 px-4">{debt.description}</td>
+                          <td className="py-3 px-4 font-medium">{formatCurrency(debt.amount)}</td>
+                          <td className="py-3 px-4 text-green-600">{formatCurrency(debt.paid_amount)}</td>
+                          <td className="py-3 px-4 text-red-600 font-medium">{formatCurrency(debt.remaining)}</td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[debt.status] || ''}`}>
+                              {statusLabels[debt.status] || debt.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-gray-500">{debt.due_date ? formatDate(debt.due_date) : '-'}</td>
+                          <td className="py-3 px-4">
+                            {debt.status !== 'paid' && (
+                              <button
+                                onClick={() => handleOpenPaymentDialog(debt.id)}
+                                className="text-green-600 hover:text-green-700 text-sm font-medium"
+                              >
+                                سداد
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'orders' && (
+            <div>
+              {ordersLoading ? (
+                <LoadingSpinner />
+              ) : !purchaseOrders || purchaseOrders.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">لا توجد فواتير شراء</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-gray-50">
+                        <th className="text-right py-3 px-4 font-medium text-gray-600">رقم الطلب</th>
+                        <th className="text-right py-3 px-4 font-medium text-gray-600">التاريخ</th>
+                        <th className="text-right py-3 px-4 font-medium text-gray-600">المبلغ</th>
+                        <th className="text-right py-3 px-4 font-medium text-gray-600">الحالة</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {purchaseOrders.map((order: Record<string, unknown>) => (
+                        <tr key={order.id as string} className="border-b hover:bg-gray-50">
+                          <td className="py-3 px-4 font-medium">{order.order_number as string || order.id as string}</td>
+                          <td className="py-3 px-4 text-gray-500">{formatDate(order.created_at as string)}</td>
+                          <td className="py-3 px-4 font-medium">{formatCurrency(order.total_amount as number)}</td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              order.status === 'received' ? 'bg-green-100 text-green-700' :
+                              order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {order.status === 'received' ? 'تم الاستلام' :
+                               order.status === 'pending' ? 'قيد الانتظار' :
+                               order.status as string}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      <Dialog isOpen={editMode} onClose={() => setEditMode(false)} title="تعديل المورد" maxWidth="max-w-xl">
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-sm font-medium mb-1">الاسم</label><input type="text" value={form.name || ''} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
-            <div><label className="block text-sm font-medium mb-1">الهاتف</label><input type="text" value={form.phone || ''} onChange={e => setForm({ ...form, phone: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
-            <div><label className="block text-sm font-medium mb-1">البريد</label><input type="email" value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
-            <div><label className="block text-sm font-medium mb-1">أيام الدفع</label><input type="number" value={form.payment_terms_days || ''} onChange={e => setForm({ ...form, payment_terms_days: Number(e.target.value) })} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
-          </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" checked={form.is_active ?? true} onChange={e => setForm({ ...form, is_active: e.target.checked })} className="rounded" />
-            <label className="text-sm font-medium">نشط</label>
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button onClick={() => setEditMode(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">إلغاء</button>
-            <button onClick={handleSave} disabled={updateMutation.isPending} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
-              {updateMutation.isPending ? 'جاري الحفظ...' : 'حفظ'}
-            </button>
-          </div>
-        </div>
-      </Dialog>
-
-      <Dialog isOpen={showDelete} onClose={() => setShowDelete(false)} title="تأكيد الحذف">
-        <p className="mb-4">هل أنت متأكد من حذف المورد "{supplier.name}"؟</p>
-        <div className="flex justify-end gap-2">
-          <button onClick={() => setShowDelete(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">إلغاء</button>
-          <button onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
-            {deleteMutation.isPending ? 'جاري الحذف...' : 'حذف'}
-          </button>
-        </div>
-      </Dialog>
-
-      <Dialog isOpen={showDebt} onClose={() => setShowDebt(false)} title="إضافة دين جديد">
-        <form onSubmit={handleCreateDebt} className="space-y-4">
-          <div><label className="block text-sm font-medium mb-1">المبلغ *</label><input type="number" step="0.01" value={debtForm.amount} onChange={e => setDebtForm({ ...debtForm, amount: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required /></div>
-          <div><label className="block text-sm font-medium mb-1">الوصف *</label><input type="text" value={debtForm.description} onChange={e => setDebtForm({ ...debtForm, description: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required /></div>
-          <div><label className="block text-sm font-medium mb-1">تاريخ الاستحقاق</label><input type="date" value={debtForm.due_date} onChange={e => setDebtForm({ ...debtForm, due_date: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => setShowDebt(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">إلغاء</button>
-            <button type="submit" disabled={createDebtMutation.isPending} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
-              {createDebtMutation.isPending ? 'جاري الحفظ...' : 'حفظ'}
-            </button>
-          </div>
-        </form>
-      </Dialog>
-
-      <Dialog isOpen={showPayment} onClose={() => setShowPayment(false)} title="تسجيل دفعة">
-        <form onSubmit={handleCreatePayment} className="space-y-4">
+      <Dialog isOpen={showPaymentDialog} onClose={() => setShowPaymentDialog(false)} title="سداد دفعة" maxWidth="max-w-lg">
+        <form onSubmit={handleSubmitPayment} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">الدين *</label>
-            <select value={paymentForm.debt_id} onChange={e => setPaymentForm({ ...paymentForm, debt_id: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            <select
+              value={selectedDebtId}
+              onChange={e => {
+                setSelectedDebtId(e.target.value)
+                const debt = unpaidDebts.find((d: Debt) => d.id === e.target.value)
+                if (debt) setPaymentForm({ ...paymentForm, amount: String(debt.remaining) })
+              }}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            >
               <option value="">اختر الدين</option>
-              {debts.filter((d: Debt) => d.status !== 'paid').map((d: Debt) => (
-                <option key={d.id} value={d.id}>{d.description} - متبقي {formatCurrency(d.remaining)}</option>
+              {unpaidDebts.map((d: Debt) => (
+                <option key={d.id} value={d.id}>
+                  {d.description} - متبقي {formatCurrency(d.remaining)}
+                </option>
               ))}
             </select>
           </div>
-          <div><label className="block text-sm font-medium mb-1">المبلغ *</label><input type="number" step="0.01" value={paymentForm.amount} onChange={e => setPaymentForm({ ...paymentForm, amount: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required /></div>
+          <div>
+            <label className="block text-sm font-medium mb-1">المبلغ *</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={paymentForm.amount}
+              onChange={e => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium mb-1">طريقة الدفع</label>
-            <select value={paymentForm.payment_method} onChange={e => setPaymentForm({ ...paymentForm, payment_method: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select
+              value={paymentForm.payment_method}
+              onChange={e => setPaymentForm({ ...paymentForm, payment_method: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
               <option value="cash">نقدي</option>
               <option value="bank_transfer">تحويل بنكي</option>
               <option value="credit_card">بطاقة ائتمان</option>
               <option value="cheque">شيك</option>
             </select>
           </div>
-          <div><label className="block text-sm font-medium mb-1">ملاحظات</label><input type="text" value={paymentForm.notes} onChange={e => setPaymentForm({ ...paymentForm, notes: e.target.value })} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div>
+          <div>
+            <label className="block text-sm font-medium mb-1">ملاحظات</label>
+            <input
+              type="text"
+              value={paymentForm.notes}
+              onChange={e => setPaymentForm({ ...paymentForm, notes: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => setShowPayment(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">إلغاء</button>
-            <button type="submit" disabled={createPaymentMutation.isPending} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
-              {createPaymentMutation.isPending ? 'جاري الحفظ...' : 'حفظ'}
+            <button type="button" onClick={() => setShowPaymentDialog(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              disabled={paymentMutation.isPending || !selectedDebtId || !paymentForm.amount}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+            >
+              {paymentMutation.isPending ? 'جاري الحفظ...' : 'تسجيل الدفعة'}
             </button>
           </div>
         </form>

@@ -15,6 +15,9 @@ const colorClasses: Record<string, string> = {
   orange: 'bg-orange-50 text-orange-600',
   red: 'bg-red-50 text-red-600',
   purple: 'bg-purple-50 text-purple-600',
+  emerald: 'bg-emerald-50 text-emerald-600',
+  indigo: 'bg-indigo-50 text-indigo-600',
+  yellow: 'bg-yellow-50 text-yellow-600',
 }
 
 export default function StatsCard({ title, value, icon: Icon, color = 'blue', isCurrency = false }: StatsCardProps) {

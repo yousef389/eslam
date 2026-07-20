@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Search, Printer } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../lib/api'
 import { formatCurrency, formatDate } from '../lib/utils'
@@ -69,6 +69,7 @@ export default function SalesPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
   const [showCreate, setShowCreate] = useState(false)
@@ -80,9 +81,10 @@ export default function SalesPage() {
   const [notes, setNotes] = useState('')
 
   const { data, isLoading } = useQuery<PaginatedResponse>({
-    queryKey: ['sales', page, fromDate, toDate],
+    queryKey: ['sales', page, search, fromDate, toDate],
     queryFn: () => {
       const params: Record<string, unknown> = { page, per_page: 20 }
+      if (search) params.search = search
       if (fromDate) params.from_date = fromDate
       if (toDate) params.to_date = toDate
       return api.get('/sale-orders', { params }).then(res => res.data)
@@ -108,6 +110,15 @@ export default function SalesPage() {
       resetForm()
     },
     onError: () => toast.error('حدث خطأ أثناء إنشاء الفاتورة'),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/sale-orders/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] })
+      toast.success('تم حذف الفاتورة بنجاح')
+    },
+    onError: () => toast.error('حدث خطأ أثناء حذف الفاتورة'),
   })
 
   const resetForm = () => {
@@ -174,6 +185,18 @@ export default function SalesPage() {
     },
     { key: 'payment_method', header: 'طريقة الدفع', render: (item: SaleOrder) => ({ cash: 'نقدي', bank_transfer: 'تحويل بنكي', credit_card: 'بطاقة ائتمان', cheque: 'شيك' }[item.payment_method] || item.payment_method) },
     { key: 'created_at', header: 'التاريخ', render: (item: SaleOrder) => formatDate(item.created_at) },
+    {
+      key: 'actions', header: 'إجراءات', render: (item: SaleOrder) => (
+        <div className="flex gap-1">
+          <button onClick={(e) => { e.stopPropagation(); window.print() }} className="p-1 text-blue-600 hover:bg-blue-50 rounded">
+            <Printer size={16} />
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); if(confirm('هل أنت متأكد من حذف هذه الفاتورة؟')) deleteMutation.mutate(item.id) }} className="p-1 text-red-600 hover:bg-red-50 rounded">
+            <Trash2 size={16} />
+          </button>
+        </div>
+      )
+    },
   ]
 
   return (
@@ -189,6 +212,19 @@ export default function SalesPage() {
       />
 
       <div className="flex gap-4 mb-4">
+        <div className="flex-1">
+          <label className="block text-sm font-medium mb-1">بحث</label>
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="بحث برقم الفاتورة أو اسم العميل..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1) }}
+              className="w-full pr-10 pl-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
         <div>
           <label className="block text-sm font-medium mb-1">من تاريخ</label>
           <input type="date" value={fromDate} onChange={e => { setFromDate(e.target.value); setPage(1) }} className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
