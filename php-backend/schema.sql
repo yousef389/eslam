@@ -1,0 +1,355 @@
+-- Sanitary ERP - MySQL Schema for InfinityFree
+CREATE DATABASE IF NOT EXISTS `if0_42446288_rslam` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `if0_42446288_rslam`;
+
+CREATE TABLE IF NOT EXISTS users (
+  id VARCHAR(36) PRIMARY KEY,
+  username VARCHAR(100) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  full_name VARCHAR(255) NOT NULL DEFAULT '',
+  password_hash VARCHAR(255) NOT NULL,
+  role VARCHAR(20) NOT NULL DEFAULT 'staff',
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  last_login DATETIME DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS categories (
+  id VARCHAR(36) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description TEXT DEFAULT NULL,
+  parent_id VARCHAR(36) DEFAULT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS customers (
+  id VARCHAR(36) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  phone VARCHAR(50) NOT NULL DEFAULT '',
+  email VARCHAR(255) DEFAULT NULL,
+  address TEXT DEFAULT NULL,
+  tax_number VARCHAR(50) DEFAULT NULL,
+  credit_limit DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  current_balance DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  notes TEXT DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS suppliers (
+  id VARCHAR(36) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  phone VARCHAR(50) NOT NULL DEFAULT '',
+  email VARCHAR(255) DEFAULT NULL,
+  address TEXT DEFAULT NULL,
+  tax_number VARCHAR(50) DEFAULT NULL,
+  payment_terms_days INT NOT NULL DEFAULT 30,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  notes TEXT DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS products (
+  id VARCHAR(36) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  sku VARCHAR(100) UNIQUE NOT NULL,
+  barcode VARCHAR(100) DEFAULT NULL,
+  description TEXT DEFAULT NULL,
+  category_id VARCHAR(36) DEFAULT NULL,
+  supplier_id VARCHAR(36) DEFAULT NULL,
+  unit_price DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  cost_price DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  quantity_in_stock INT NOT NULL DEFAULT 0,
+  minimum_stock_level INT NOT NULL DEFAULT 0,
+  maximum_stock_level INT NOT NULL DEFAULT 1000,
+  unit VARCHAR(20) NOT NULL DEFAULT 'piece',
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  image_url VARCHAR(500) DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sale_orders (
+  id VARCHAR(36) PRIMARY KEY,
+  order_number VARCHAR(50) UNIQUE NOT NULL,
+  customer_id VARCHAR(36) NOT NULL,
+  user_id VARCHAR(36) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'draft',
+  subtotal DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  discount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  tax_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  payment_method VARCHAR(20) DEFAULT 'cash',
+  notes TEXT DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sale_order_items (
+  id VARCHAR(36) PRIMARY KEY,
+  order_id VARCHAR(36) NOT NULL,
+  product_id VARCHAR(36) NOT NULL,
+  quantity INT NOT NULL DEFAULT 0,
+  unit_price DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  discount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES sale_orders(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS purchase_orders (
+  id VARCHAR(36) PRIMARY KEY,
+  order_number VARCHAR(50) UNIQUE NOT NULL,
+  supplier_id VARCHAR(36) NOT NULL,
+  user_id VARCHAR(36) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'draft',
+  subtotal DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  discount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  tax_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  payment_method VARCHAR(20) DEFAULT 'cash',
+  notes TEXT DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS purchase_order_items (
+  id VARCHAR(36) PRIMARY KEY,
+  order_id VARCHAR(36) NOT NULL,
+  product_id VARCHAR(36) NOT NULL,
+  quantity INT NOT NULL DEFAULT 0,
+  unit_price DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  discount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES purchase_orders(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS sale_returns (
+  id VARCHAR(36) PRIMARY KEY,
+  return_number VARCHAR(50) UNIQUE NOT NULL,
+  order_id VARCHAR(36) NOT NULL,
+  customer_id VARCHAR(36) NOT NULL,
+  user_id VARCHAR(36) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  subtotal DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  tax_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  reason TEXT DEFAULT NULL,
+  notes TEXT DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sale_return_items (
+  id VARCHAR(36) PRIMARY KEY,
+  return_id VARCHAR(36) NOT NULL,
+  product_id VARCHAR(36) NOT NULL,
+  quantity INT NOT NULL DEFAULT 0,
+  unit_price DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (return_id) REFERENCES sale_returns(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS purchase_returns (
+  id VARCHAR(36) PRIMARY KEY,
+  return_number VARCHAR(50) UNIQUE NOT NULL,
+  order_id VARCHAR(36) NOT NULL,
+  supplier_id VARCHAR(36) NOT NULL,
+  user_id VARCHAR(36) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  subtotal DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  tax_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  reason TEXT DEFAULT NULL,
+  notes TEXT DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS purchase_return_items (
+  id VARCHAR(36) PRIMARY KEY,
+  return_id VARCHAR(36) NOT NULL,
+  product_id VARCHAR(36) NOT NULL,
+  quantity INT NOT NULL DEFAULT 0,
+  unit_price DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  total DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (return_id) REFERENCES purchase_returns(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS customer_debts (
+  id VARCHAR(36) PRIMARY KEY,
+  customer_id VARCHAR(36) NOT NULL,
+  amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  paid_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  remaining DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  description TEXT DEFAULT NULL,
+  due_date DATETIME DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS supplier_debts (
+  id VARCHAR(36) PRIMARY KEY,
+  supplier_id VARCHAR(36) NOT NULL,
+  amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  paid_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  remaining DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  description TEXT DEFAULT NULL,
+  due_date DATETIME DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS debt_payments (
+  id VARCHAR(36) PRIMARY KEY,
+  debt_id VARCHAR(36) NOT NULL,
+  debt_type VARCHAR(20) NOT NULL DEFAULT 'customer',
+  amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  payment_method VARCHAR(20) NOT NULL DEFAULT 'cash',
+  notes TEXT DEFAULT NULL,
+  user_id VARCHAR(36) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS cashboxes (
+  id VARCHAR(36) PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  balance DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS cashbox_transactions (
+  id VARCHAR(36) PRIMARY KEY,
+  cashbox_id VARCHAR(36) NOT NULL,
+  transaction_type VARCHAR(20) NOT NULL,
+  amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  description VARCHAR(255) NOT NULL DEFAULT '',
+  reference_id VARCHAR(36) DEFAULT NULL,
+  user_id VARCHAR(36) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS cashbox_transfers (
+  id VARCHAR(36) PRIMARY KEY,
+  transfer_number VARCHAR(50) UNIQUE NOT NULL,
+  from_cashbox_id VARCHAR(36) NOT NULL,
+  to_cashbox_id VARCHAR(36) NOT NULL,
+  amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+  description TEXT DEFAULT NULL,
+  user_id VARCHAR(36) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS warehouses (
+  id VARCHAR(36) PRIMARY KEY,
+  name VARCHAR(255) UNIQUE NOT NULL,
+  location VARCHAR(500) DEFAULT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS warehouse_stocks (
+  id VARCHAR(36) PRIMARY KEY,
+  warehouse_id VARCHAR(36) NOT NULL,
+  product_id VARCHAR(36) NOT NULL,
+  quantity INT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS stock_movements (
+  id VARCHAR(36) PRIMARY KEY,
+  movement_number VARCHAR(50) UNIQUE NOT NULL,
+  product_id VARCHAR(36) NOT NULL,
+  warehouse_id VARCHAR(36) NOT NULL,
+  movement_type VARCHAR(20) NOT NULL,
+  quantity INT NOT NULL DEFAULT 0,
+  reference_id VARCHAR(36) DEFAULT NULL,
+  notes TEXT DEFAULT NULL,
+  user_id VARCHAR(36) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS stock_transfers (
+  id VARCHAR(36) PRIMARY KEY,
+  transfer_number VARCHAR(50) UNIQUE NOT NULL,
+  product_id VARCHAR(36) NOT NULL,
+  from_warehouse_id VARCHAR(36) NOT NULL,
+  to_warehouse_id VARCHAR(36) NOT NULL,
+  quantity INT NOT NULL DEFAULT 0,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  notes TEXT DEFAULT NULL,
+  user_id VARCHAR(36) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS system_settings (
+  id VARCHAR(36) PRIMARY KEY,
+  `key` VARCHAR(100) UNIQUE NOT NULL,
+  `value` TEXT DEFAULT NULL,
+  `group` VARCHAR(50) NOT NULL DEFAULT 'store',
+  description VARCHAR(500) DEFAULT NULL,
+  is_secret TINYINT(1) NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS extractions (
+  id VARCHAR(36) PRIMARY KEY,
+  image_url VARCHAR(500) DEFAULT NULL,
+  source VARCHAR(50) NOT NULL DEFAULT 'api',
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  raw_text TEXT DEFAULT NULL,
+  extracted_data JSON DEFAULT NULL,
+  review_notes TEXT DEFAULT NULL,
+  reviewed_by VARCHAR(36) DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Seed default admin user (password: Admin@12345)
+INSERT IGNORE INTO users (id, username, email, full_name, password_hash, role, is_active)
+VALUES ('a0000000-0000-0000-0000-000000000001', 'admin', 'admin@eslam.gt.tc', 'Administrator', '$2y$10$OLYHGk5LArni8qRJYDebWutYVXge/DUHFPjiVZuGwdfl3zw63ylju', 'admin', 1);
+
+-- Seed default cashbox
+INSERT IGNORE INTO cashboxes (id, name, balance, is_active)
+VALUES ('c0000000-0000-0000-0000-000000000001', 'الصندوق الرئيسي', 0.00, 1);
+
+-- Seed default settings
+INSERT IGNORE INTO system_settings (id, `key`, `value`, `group`, description) VALUES
+('s1', 'store_name', 'محل الأدوات الصحية', 'store', 'اسم المحل'),
+('s2', 'store_phone', '', 'store', 'هاتف المحل'),
+('s3', 'store_address', '', 'store', 'عنوان المحل'),
+('s4', 'store_logo', '', 'store', 'شعار المحل'),
+('s5', 'tax_rate', '0.14', 'store', 'نسبة الضريبة'),
+('s6', 'currency', 'EGP', 'store', 'العملة'),
+('s7', 'ai_provider', 'gemini', 'ai', 'مزود الذكاء الاصطناعي'),
+('s8', 'ai_api_key', '', 'ai', 'مفتاح API للذكاء الاصطناعي'),
+('s9', 'ai_model', 'gemini-pro', 'ai', 'نموذج الذكاء الاصطناعي'),
+('s10', 'telegram_bot_token', '', 'telegram', 'توكن بوت تيليجرام'),
+('s11', 'telegram_chat_id', '', 'telegram', 'معرف المحادثة'),
+('s12', 'api_rate_limit', '100', 'api', 'حد الطلبات'),
+('s13', 'security_lockout_attempts', '5', 'security', 'محاولات القفل'),
+('s14', 'security_lockout_duration', '30', 'security', 'مدة القفل بالدقائق'),
+('s15', 'print_header', '', 'store', 'رأس الطباعة'),
+('s16', 'print_footer', '', 'store', 'تذييل الطباعة'),
+('s17', 'print_show_logo', 'true', 'store', 'إظهار الشعار'),
+('s18', 'backup_last_date', '', 'backup', 'آخر نسخة احتياطية'),
+('s19', 'inventory_warehouse_default', '', 'inventory', 'المخزن الافتراضي'),
+('s20', 'inventory_track_serial', 'false', 'inventory', 'تتبع الأرقام التسلسلية');
