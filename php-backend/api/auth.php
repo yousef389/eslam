@@ -2,6 +2,7 @@
 require_once __DIR__ . '/config.php';
 
 function generateToken($userId, $username, $role) {
+    global $config;
     $header = base64_encode(json_encode(['alg' => 'HS256', 'typ' => 'JWT']));
     $payload = base64_encode(json_encode([
         'sub' => $userId,
@@ -28,6 +29,13 @@ function verifyToken($token) {
 
 function getCurrentUser() {
     $auth = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    if (!$auth) {
+        $headers = function_exists('apache_request_headers') ? apache_request_headers() : [];
+        $auth = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+    }
+    if (!$auth && isset($_COOKIE['access_token'])) {
+        $auth = 'Bearer ' . $_COOKIE['access_token'];
+    }
     if (!preg_match('/^Bearer\s+(.+)$/i', $auth, $m)) {
         errorResponse('Unauthorized', 401);
     }

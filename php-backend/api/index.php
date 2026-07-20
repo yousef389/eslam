@@ -222,6 +222,8 @@ function authLogin($p) {
     $db->prepare("UPDATE users SET last_login = NOW() WHERE id = ?")->execute([$user['id']]);
     $token = generateToken($user['id'], $user['username'], $user['role']);
     $refresh = generateToken($user['id'], $user['username'], $user['role']);
+    setcookie('access_token', $token, time() + 86400, '/', '', false, false);
+    setcookie('refresh_token', $refresh, time() + 86400 * 7, '/', '', false, false);
     successResponse([
         'access_token' => $token,
         'refresh_token' => $refresh,
