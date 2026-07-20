@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
 import {
   Package,
   Users,
@@ -99,6 +99,12 @@ export default function DashboardPage() {
     { name: 'المبيعات', value: Number(s.monthly_sales) || 0, fill: '#3b82f6' },
     { name: 'المشتريات', value: Number(s.total_purchases) || 0, fill: '#8b5cf6' },
   ]
+
+  const debtData = [
+    { name: 'مديونيات العملاء', value: Number(s.customer_debts_total) || 0 },
+    { name: 'مستحقات الموردين', value: Number(s.supplier_debts_total) || 0 },
+  ]
+  const COLORS = ['#f97316', '#ef4444']
 
   const quickActions = [
     { label: 'المنتجات', icon: Package, path: '/products', color: 'bg-blue-500 hover:bg-blue-600' },
@@ -254,6 +260,43 @@ export default function DashboardPage() {
                 )
               })
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Debt Comparison + Financial Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <h3 className="text-lg font-semibold mb-4">مقارنة المديونيات</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie data={debtData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${formatCurrency(value)}`}>
+                {debtData.map((_, idx) => <Cell key={idx} fill={COLORS[idx]} />)}
+              </Pie>
+              <Tooltip formatter={(value: number) => formatCurrency(value)} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <h3 className="text-lg font-semibold mb-4">ملخص مالي سريع</h3>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+              <span className="text-sm font-medium">صافي الأرباح</span>
+              <span className="font-bold text-green-600">{formatCurrency(Number(s.net_profit))}</span>
+            </div>
+            <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+              <span className="text-sm font-medium">رصيد الخزنة</span>
+              <span className="font-bold text-blue-600">{formatCurrency(Number(s.cashbox_balance))}</span>
+            </div>
+            <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
+              <span className="text-sm font-medium">مديونيات العملاء</span>
+              <span className="font-bold text-orange-600">{formatCurrency(Number(s.customer_debts_total))}</span>
+            </div>
+            <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+              <span className="text-sm font-medium">مستحقات الموردين</span>
+              <span className="font-bold text-red-600">{formatCurrency(Number(s.supplier_debts_total))}</span>
+            </div>
           </div>
         </div>
       </div>

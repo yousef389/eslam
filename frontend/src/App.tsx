@@ -13,8 +13,10 @@ import SuppliersPage from './pages/SuppliersPage'
 import SupplierDetailPage from './pages/SupplierDetailPage'
 import SalesPage from './pages/SalesPage'
 import SaleDetailPage from './pages/SaleDetailPage'
+import SaleReturnsPage from './pages/SaleReturnsPage'
 import PurchasesPage from './pages/PurchasesPage'
 import PurchaseDetailPage from './pages/PurchaseDetailPage'
+import PurchaseReturnsPage from './pages/PurchaseReturnsPage'
 import AccountingCustomersPage from './pages/AccountingCustomersPage'
 import AccountingSuppliersPage from './pages/AccountingSuppliersPage'
 import CashboxPage from './pages/CashboxPage'
@@ -52,8 +54,10 @@ function App() {
             <Route path="/suppliers/:id" element={<ProtectedRoute><SupplierDetailPage /></ProtectedRoute>} />
             <Route path="/sales" element={<ProtectedRoute><SalesPage /></ProtectedRoute>} />
             <Route path="/sales/:id" element={<ProtectedRoute><SaleDetailPage /></ProtectedRoute>} />
+            <Route path="/sale-returns" element={<ProtectedRoute><SaleReturnsPage /></ProtectedRoute>} />
             <Route path="/purchases" element={<ProtectedRoute><PurchasesPage /></ProtectedRoute>} />
             <Route path="/purchases/:id" element={<ProtectedRoute><PurchaseDetailPage /></ProtectedRoute>} />
+            <Route path="/purchase-returns" element={<ProtectedRoute><PurchaseReturnsPage /></ProtectedRoute>} />
             <Route path="/accounting/customers" element={<ProtectedRoute><AccountingCustomersPage /></ProtectedRoute>} />
             <Route path="/accounting/suppliers" element={<ProtectedRoute><AccountingSuppliersPage /></ProtectedRoute>} />
             <Route path="/accounting/cashbox" element={<ProtectedRoute><CashboxPage /></ProtectedRoute>} />

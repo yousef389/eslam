@@ -20,6 +20,7 @@ def _model_to_entity(model: ProductModel) -> Product:
         barcode=model.barcode or "",
         description=model.description or "",
         category_id=model.category_id,
+        supplier_id=model.supplier_id,
         unit_price=Money(amount=Decimal(str(model.unit_price))),
         cost_price=Money(amount=Decimal(str(model.cost_price))),
         quantity_in_stock=model.quantity_in_stock,
@@ -41,6 +42,7 @@ def _entity_to_model(entity: Product) -> ProductModel:
         barcode=entity.barcode or None,
         description=entity.description or None,
         category_id=entity.category_id,
+        supplier_id=entity.supplier_id,
         unit_price=float(entity.unit_price.amount),
         cost_price=float(entity.cost_price.amount),
         quantity_in_stock=entity.quantity_in_stock,
@@ -82,6 +84,7 @@ class ProductRepositoryImpl(ProductRepository):
             model.barcode = entity.barcode or None
             model.description = entity.description or None
             model.category_id = entity.category_id
+            model.supplier_id = entity.supplier_id
             model.unit_price = float(entity.unit_price.amount)
             model.cost_price = float(entity.cost_price.amount)
             model.quantity_in_stock = entity.quantity_in_stock

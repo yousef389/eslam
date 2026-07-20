@@ -50,6 +50,7 @@ class ProductCreate(BaseModel):
     barcode: Optional[str] = None
     description: Optional[str] = None
     category_id: Optional[str] = None
+    supplier_id: Optional[str] = None
     unit_price: Decimal
     cost_price: Decimal
     quantity_in_stock: int = 0
@@ -65,6 +66,7 @@ class ProductUpdate(BaseModel):
     barcode: Optional[str] = None
     description: Optional[str] = None
     category_id: Optional[str] = None
+    supplier_id: Optional[str] = None
     unit_price: Optional[Decimal] = None
     cost_price: Optional[Decimal] = None
     quantity_in_stock: Optional[int] = None
@@ -82,6 +84,7 @@ class ProductResponse(BaseModel):
     barcode: Optional[str] = None
     description: Optional[str] = None
     category_id: Optional[str] = None
+    supplier_id: Optional[str] = None
     unit_price: Decimal
     cost_price: Decimal
     quantity_in_stock: int

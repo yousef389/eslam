@@ -13,6 +13,7 @@ from .enums import (
     OrderStatus,
     PaymentMethod,
     SettingsGroup,
+    StockMovementType,
     TransactionType,
     UserRole,
 )
@@ -60,6 +61,7 @@ class Product:
     barcode: str = ""
     description: str = ""
     category_id: Optional[str] = None
+    supplier_id: Optional[str] = None
     unit_price: Money = field(default_factory=lambda: Money(amount=Decimal("0.00")))
     cost_price: Money = field(default_factory=lambda: Money(amount=Decimal("0.00")))
     quantity_in_stock: int = 0
@@ -331,3 +333,64 @@ class SystemSetting:
     is_secret: bool = False
     created_at: datetime = field(default_factory=_now_utc)
     updated_at: datetime = field(default_factory=_now_utc)
+
+
+@dataclass
+class Warehouse:
+    id: str = field(default_factory=_new_id)
+    name: str = ""
+    location: str = ""
+    is_active: bool = True
+    created_at: datetime = field(default_factory=_now_utc)
+    updated_at: datetime = field(default_factory=_now_utc)
+
+
+@dataclass
+class WarehouseStock:
+    id: str = field(default_factory=_new_id)
+    warehouse_id: str = ""
+    product_id: str = ""
+    quantity: int = 0
+    created_at: datetime = field(default_factory=_now_utc)
+    updated_at: datetime = field(default_factory=_now_utc)
+
+
+@dataclass
+class StockMovement:
+    id: str = field(default_factory=_new_id)
+    movement_number: str = ""
+    product_id: str = ""
+    warehouse_id: str = ""
+    movement_type: StockMovementType = StockMovementType.PURCHASE
+    quantity: int = 0
+    reference_id: Optional[str] = None
+    notes: str = ""
+    user_id: str = ""
+    created_at: datetime = field(default_factory=_now_utc)
+
+
+@dataclass
+class StockTransfer:
+    id: str = field(default_factory=_new_id)
+    transfer_number: str = ""
+    product_id: str = ""
+    from_warehouse_id: str = ""
+    to_warehouse_id: str = ""
+    quantity: int = 0
+    status: str = "pending"
+    notes: str = ""
+    user_id: str = ""
+    created_at: datetime = field(default_factory=_now_utc)
+    updated_at: datetime = field(default_factory=_now_utc)
+
+
+@dataclass
+class CashboxTransfer:
+    id: str = field(default_factory=_new_id)
+    transfer_number: str = ""
+    from_cashbox_id: str = ""
+    to_cashbox_id: str = ""
+    amount: Money = field(default_factory=lambda: Money(amount=Decimal("0.00")))
+    description: str = ""
+    user_id: str = ""
+    created_at: datetime = field(default_factory=_now_utc)

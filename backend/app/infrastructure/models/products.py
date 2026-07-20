@@ -15,6 +15,7 @@ class ProductModel(Base):
     barcode: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True)
     description: Mapped[str | None] = mapped_column(nullable=True)
     category_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    supplier_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     unit_price: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0)
     cost_price: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0)
     quantity_in_stock: Mapped[int] = mapped_column(default=0)

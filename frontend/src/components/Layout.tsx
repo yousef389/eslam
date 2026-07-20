@@ -25,9 +25,19 @@ const navigation: NavItem[] = [
   { name: 'المنتجات', href: '/products', icon: Package },
   { name: 'العملاء', href: '/customers', icon: Users },
   { name: 'الموردين', href: '/suppliers', icon: Truck },
-  { name: 'مبيعات', href: '/sales', icon: ShoppingCart },
-  { name: 'مشتريات', href: '/purchases', icon: ShoppingCart },
   { name: 'المخزون', href: '/inventory', icon: Package },
+  {
+    name: 'المبيعات', href: '/sales', icon: ShoppingCart, children: [
+      { name: 'فواتير البيع', href: '/sales' },
+      { name: 'مرتجعات البيع', href: '/sale-returns' },
+    ]
+  },
+  {
+    name: 'المشتريات', href: '/purchases', icon: ShoppingCart, children: [
+      { name: 'فواتير الشراء', href: '/purchases' },
+      { name: 'مرتجعات الشراء', href: '/purchase-returns' },
+    ]
+  },
   {
     name: 'الحسابات', href: '/accounting', icon: Landmark, children: [
       { name: 'حسابات العملاء', href: '/accounting/customers' },

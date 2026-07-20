@@ -19,6 +19,9 @@ from app.presentation.api.v1.endpoints import (
     search,
     settings,
     reports,
+    inventory,
+    cashbox_transfers,
+    settings_export,
 )
 
 router = APIRouter(prefix="/api/v1")
@@ -40,3 +43,6 @@ router.include_router(extractions.router, prefix="/extractions", tags=["AI Extra
 router.include_router(search.router, prefix="/search", tags=["Search"])
 router.include_router(settings.router, prefix="/settings", tags=["System Settings"])
 router.include_router(reports.router, prefix="/reports", tags=["Reports"])
+router.include_router(inventory.router, prefix="/inventory", tags=["Inventory"])
+router.include_router(cashbox_transfers.router, prefix="/cashbox-transfers", tags=["Cashbox Transfers"])
+router.include_router(settings_export.router, prefix="/settings", tags=["Settings Export"])

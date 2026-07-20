@@ -55,3 +55,15 @@ class SettingsGroup(str, Enum):
     API = "api"
     SECURITY = "security"
     STORE = "store"
+    INVENTORY = "inventory"
+    BACKUP = "backup"
+    PRINT = "print"
+
+
+class StockMovementType(str, Enum):
+    PURCHASE = "purchase"
+    SALE = "sale"
+    RETURN = "return"
+    TRANSFER = "transfer"
+    ADJUSTMENT = "adjustment"
+    DAMAGE = "damage"

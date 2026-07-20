@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { Settings, Brain, MessageSquare, Globe, Shield, Store, Save, Eye, EyeOff } from 'lucide-react'
+import { Settings, Brain, MessageSquare, Globe, Shield, Store, Save, Eye, EyeOff, Database, Download, Upload, FileDown } from 'lucide-react'
 import api from '../lib/api'
 import PageHeader from '../components/PageHeader'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -22,6 +22,7 @@ const groupConfig: Record<string, { label: string; icon: typeof Brain; color: st
   api: { label: 'API', icon: Globe, color: 'green' },
   security: { label: 'الأمان', icon: Shield, color: 'red' },
   store: { label: 'المحل', icon: Store, color: 'orange' },
+  backup: { label: 'النسخ الاحتياطي', icon: Database, color: 'teal' },
 }
 
 export default function SettingsPage() {
@@ -60,6 +61,21 @@ export default function SettingsPage() {
 
   const toggleSecretVisibility = (key: string) => {
     setShowSecrets(prev => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  const handleDownload = async (url: string, filename: string) => {
+    try {
+      const response = await api.get(url, { responseType: 'blob' })
+      const blob = new Blob([response.data])
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = filename
+      link.click()
+      URL.revokeObjectURL(link.href)
+      toast.success('تم التحميل بنجاح')
+    } catch {
+      toast.error('حدث خطأ أثناء التحميل')
+    }
   }
 
   const getDisplayValue = (setting: Setting) => {
@@ -131,7 +147,123 @@ export default function SettingsPage() {
             </div>
 
             <div className="p-6">
-              {groupSettings.length === 0 ? (
+              {activeGroup === 'backup' ? (
+                <div className="space-y-8">
+                  {/* Backup Section */}
+                  <div>
+                    <h3 className="text-md font-semibold mb-4 flex items-center gap-2">
+                      <Database size={20} className="text-teal-600" />
+                      نسخ احتياطي كامل
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      قم بتحميل نسخة احتياطية كاملة من جميع بيانات النظام
+                    </p>
+                    <button
+                      onClick={() => handleDownload('/settings/backup', 'backup.json')}
+                      className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+                    >
+                      <Download size={16} />
+                      تحميل النسخة الاحتياطية
+                    </button>
+                  </div>
+
+                  <hr className="border-gray-200" />
+
+                  {/* Export Section */}
+                  <div>
+                    <h3 className="text-md font-semibold mb-4 flex items-center gap-2">
+                      <FileDown size={20} className="text-teal-600" />
+                      تصدير البيانات
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      قم بتصدير البيانات إلى ملفات CSV
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <button
+                        onClick={() => handleDownload('/settings/export/products', 'products.csv')}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        <Download size={16} />
+                        تصدير المنتجات
+                      </button>
+                      <button
+                        onClick={() => handleDownload('/settings/export/customers', 'customers.csv')}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <Download size={16} />
+                        تصدير العملاء
+                      </button>
+                      <button
+                        onClick={() => handleDownload('/settings/export/suppliers', 'suppliers.csv')}
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                      >
+                        <Download size={16} />
+                        تصدير الموردين
+                      </button>
+                    </div>
+                  </div>
+
+                  <hr className="border-gray-200" />
+
+                  {/* Import Section */}
+                  <div>
+                    <h3 className="text-md font-semibold mb-4 flex items-center gap-2">
+                      <Upload size={20} className="text-teal-600" />
+                      استيراد البيانات
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      قم باستيراد البيانات من ملفات CSV
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="file"
+                          accept=".csv"
+                          id="import-products"
+                          className="hidden"
+                        />
+                        <label
+                          htmlFor="import-products"
+                          className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors cursor-pointer"
+                        >
+                          <Upload size={16} />
+                          استيراد المنتجات
+                        </label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="file"
+                          accept=".csv"
+                          id="import-customers"
+                          className="hidden"
+                        />
+                        <label
+                          htmlFor="import-customers"
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors cursor-pointer"
+                        >
+                          <Upload size={16} />
+                          استيراد العملاء
+                        </label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="file"
+                          accept=".csv"
+                          id="import-suppliers"
+                          className="hidden"
+                        />
+                        <label
+                          htmlFor="import-suppliers"
+                          className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors cursor-pointer"
+                        >
+                          <Upload size={16} />
+                          استيراد الموردين
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : groupSettings.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">لا توجد إعدادات في هذا القسم</p>
               ) : (
                 <div className="space-y-6">

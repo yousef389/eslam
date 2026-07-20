@@ -100,7 +100,7 @@ class ExportService:
         return buffer.getvalue()
 
     @staticmethod
-    def export_to_csv(data: list[dict]) -> str:
+    def export_to_csv(data: list[dict], filename: str = "report") -> str:
         import csv
         if not data:
             return ""

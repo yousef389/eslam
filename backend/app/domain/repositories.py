@@ -9,6 +9,7 @@ from .entities import (
     AuditLog,
     Cashbox,
     CashboxTransaction,
+    CashboxTransfer,
     Category,
     Customer,
     CustomerDebt,
@@ -21,13 +22,19 @@ from .entities import (
     PurchaseReturnItem,
     SaleOrder,
     SaleOrderItem,
+    SaleReturn,
+    SaleReturnItem,
+    StockMovement,
+    StockTransfer,
     Supplier,
     SupplierDebt,
     SystemSetting,
     Transaction,
     User,
+    Warehouse,
+    WarehouseStock,
 )
-from .enums import DebtStatus, ExtractionStatus, SettingsGroup, TransactionType
+from .enums import DebtStatus, ExtractionStatus, SettingsGroup, StockMovementType, TransactionType
 
 T = TypeVar("T")
 
@@ -145,6 +152,26 @@ class SaleOrderItemRepository(BaseRepository[SaleOrderItem]):
     async def get_by_order(
         self, order_id: str, page: int = 1, per_page: int = 20
     ) -> Tuple[List[SaleOrderItem], int]:
+        ...
+
+
+class SaleReturnRepository(BaseRepository[SaleReturn]):
+    @abstractmethod
+    async def get_by_return_number(self, return_number: str) -> Optional[SaleReturn]:
+        ...
+
+    @abstractmethod
+    async def get_by_customer(
+        self, customer_id: str, page: int = 1, per_page: int = 20
+    ) -> Tuple[List[SaleReturn], int]:
+        ...
+
+
+class SaleReturnItemRepository(BaseRepository[SaleReturnItem]):
+    @abstractmethod
+    async def get_by_return(
+        self, return_id: str, page: int = 1, per_page: int = 20
+    ) -> Tuple[List[SaleReturnItem], int]:
         ...
 
 
@@ -339,4 +366,62 @@ class SystemSettingRepository(BaseRepository[SystemSetting]):
 
     @abstractmethod
     async def set_setting(self, key: str, value: str, group: SettingsGroup, description: str = "", is_secret: bool = False) -> SystemSetting:
+        ...
+
+
+class WarehouseRepository(BaseRepository[Warehouse]):
+    @abstractmethod
+    async def get_by_name(self, name: str) -> Optional[Warehouse]:
+        ...
+
+
+class WarehouseStockRepository(BaseRepository[WarehouseStock]):
+    @abstractmethod
+    async def get_by_warehouse(self, warehouse_id: str) -> List[WarehouseStock]:
+        ...
+
+    @abstractmethod
+    async def get_by_product(self, product_id: str) -> List[WarehouseStock]:
+        ...
+
+    @abstractmethod
+    async def get_by_warehouse_and_product(self, warehouse_id: str, product_id: str) -> Optional[WarehouseStock]:
+        ...
+
+
+class StockMovementRepository(BaseRepository[StockMovement]):
+    @abstractmethod
+    async def get_by_product(self, product_id: str, page: int = 1, per_page: int = 20) -> Tuple[List[StockMovement], int]:
+        ...
+
+    @abstractmethod
+    async def get_by_warehouse(self, warehouse_id: str, page: int = 1, per_page: int = 20) -> Tuple[List[StockMovement], int]:
+        ...
+
+    @abstractmethod
+    async def get_by_type(self, movement_type: StockMovementType, page: int = 1, per_page: int = 20) -> Tuple[List[StockMovement], int]:
+        ...
+
+
+class StockTransferRepository(BaseRepository[StockTransfer]):
+    @abstractmethod
+    async def get_by_product(self, product_id: str, page: int = 1, per_page: int = 20) -> Tuple[List[StockTransfer], int]:
+        ...
+
+    @abstractmethod
+    async def get_by_from_warehouse(self, warehouse_id: str, page: int = 1, per_page: int = 20) -> Tuple[List[StockTransfer], int]:
+        ...
+
+    @abstractmethod
+    async def get_by_to_warehouse(self, warehouse_id: str, page: int = 1, per_page: int = 20) -> Tuple[List[StockTransfer], int]:
+        ...
+
+
+class CashboxTransferRepository(BaseRepository[CashboxTransfer]):
+    @abstractmethod
+    async def get_by_from_cashbox(self, cashbox_id: str, page: int = 1, per_page: int = 20) -> Tuple[List[CashboxTransfer], int]:
+        ...
+
+    @abstractmethod
+    async def get_by_to_cashbox(self, cashbox_id: str, page: int = 1, per_page: int = 20) -> Tuple[List[CashboxTransfer], int]:
         ...

@@ -4,6 +4,13 @@ from .categories import CategoryModel
 from .customers import CustomerModel
 from .debts import CustomerDebtModel, DebtPaymentModel, SupplierDebtModel
 from .extractions import ExtractionModel
+from .inventory import (
+    CashboxTransferModel,
+    StockMovementModel,
+    StockTransferModel,
+    WarehouseModel,
+    WarehouseStockModel,
+)
 from .products import ProductModel
 from .purchase_orders import PurchaseOrderItemModel, PurchaseOrderModel
 from .purchase_returns import PurchaseReturnItemModel, PurchaseReturnModel
@@ -18,6 +25,7 @@ __all__ = [
     "AuditLogModel",
     "CashboxModel",
     "CashboxTransactionModel",
+    "CashboxTransferModel",
     "CategoryModel",
     "CustomerModel",
     "CustomerDebtModel",
@@ -32,9 +40,13 @@ __all__ = [
     "SaleOrderModel",
     "SaleReturnItemModel",
     "SaleReturnModel",
+    "StockMovementModel",
+    "StockTransferModel",
     "SupplierDebtModel",
     "SystemSettingModel",
     "SupplierModel",
     "TransactionModel",
     "UserModel",
+    "WarehouseModel",
+    "WarehouseStockModel",
 ]

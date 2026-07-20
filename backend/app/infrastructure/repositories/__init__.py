@@ -2,6 +2,7 @@ from .audit_log_repository import AuditLogRepositoryImpl
 from .base import BaseRepositoryImpl
 from .cashbox_repository import CashboxRepositoryImpl
 from .cashbox_transaction_repository import CashboxTransactionRepositoryImpl
+from .cashbox_transfer_repository import CashboxTransferRepositoryImpl
 from .category_repository import CategoryRepositoryImpl
 from .customer_debt_repository import CustomerDebtRepositoryImpl
 from .customer_repository import CustomerRepositoryImpl
@@ -12,17 +13,22 @@ from .purchase_order_repository import PurchaseOrderRepositoryImpl
 from .purchase_return_repository import PurchaseReturnRepositoryImpl
 from .purchase_return_item_repository import PurchaseReturnItemRepositoryImpl
 from .sale_order_repository import SaleOrderRepositoryImpl
+from .stock_movement_repository import StockMovementRepositoryImpl
+from .stock_transfer_repository import StockTransferRepositoryImpl
 from .supplier_debt_repository import SupplierDebtRepositoryImpl
 from .supplier_repository import SupplierRepositoryImpl
 from .system_setting_repository import SystemSettingRepositoryImpl
 from .transaction_repository import TransactionRepositoryImpl
 from .user_repository import UserRepositoryImpl
+from .warehouse_repository import WarehouseRepositoryImpl
+from .warehouse_stock_repository import WarehouseStockRepositoryImpl
 
 __all__ = [
     "AuditLogRepositoryImpl",
     "BaseRepositoryImpl",
     "CashboxRepositoryImpl",
     "CashboxTransactionRepositoryImpl",
+    "CashboxTransferRepositoryImpl",
     "CategoryRepositoryImpl",
     "CustomerDebtRepositoryImpl",
     "CustomerRepositoryImpl",
@@ -33,9 +39,13 @@ __all__ = [
     "PurchaseReturnRepositoryImpl",
     "PurchaseReturnItemRepositoryImpl",
     "SaleOrderRepositoryImpl",
+    "StockMovementRepositoryImpl",
+    "StockTransferRepositoryImpl",
     "SupplierDebtRepositoryImpl",
     "SupplierRepositoryImpl",
     "SystemSettingRepositoryImpl",
     "TransactionRepositoryImpl",
     "UserRepositoryImpl",
+    "WarehouseRepositoryImpl",
+    "WarehouseStockRepositoryImpl",
 ]
