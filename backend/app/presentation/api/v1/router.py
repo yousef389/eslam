@@ -7,7 +7,9 @@ from app.presentation.api.v1.endpoints import (
     customers,
     suppliers,
     sale_orders,
+    sale_returns,
     purchase_orders,
+    purchase_returns,
     dashboard,
     accounting_customers,
     accounting_suppliers,
@@ -16,6 +18,7 @@ from app.presentation.api.v1.endpoints import (
     extractions,
     search,
     settings,
+    reports,
 )
 
 router = APIRouter(prefix="/api/v1")
@@ -25,7 +28,9 @@ router.include_router(categories.router, prefix="/categories", tags=["Categories
 router.include_router(customers.router, prefix="/customers", tags=["Customers"])
 router.include_router(suppliers.router, prefix="/suppliers", tags=["Suppliers"])
 router.include_router(sale_orders.router, prefix="/sale-orders", tags=["Sale Orders"])
+router.include_router(sale_returns.router, prefix="/sale-returns", tags=["Sale Returns"])
 router.include_router(purchase_orders.router, prefix="/purchase-orders", tags=["Purchase Orders"])
+router.include_router(purchase_returns.router, prefix="/purchase-returns", tags=["Purchase Returns"])
 router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
 router.include_router(accounting_customers.router, prefix="/accounting/customers", tags=["Customer Accounts"])
 router.include_router(accounting_suppliers.router, prefix="/accounting/suppliers", tags=["Supplier Accounts"])
@@ -34,3 +39,4 @@ router.include_router(accounting_reports.router, prefix="/accounting/reports", t
 router.include_router(extractions.router, prefix="/extractions", tags=["AI Extractions"])
 router.include_router(search.router, prefix="/search", tags=["Search"])
 router.include_router(settings.router, prefix="/settings", tags=["System Settings"])
+router.include_router(reports.router, prefix="/reports", tags=["Reports"])

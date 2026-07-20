@@ -14,6 +14,7 @@ class OrderStatus(str, Enum):
     SHIPPED = "shipped"
     DELIVERED = "delivered"
     CANCELLED = "cancelled"
+    RETURNED = "returned"
 
 
 class PaymentMethod(str, Enum):

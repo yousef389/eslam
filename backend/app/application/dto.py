@@ -280,6 +280,47 @@ class PurchaseOrderResponse(BaseModel):
     updated_at: datetime
 
 
+# ── Purchase Return DTOs ──────────────────────────────────────────────────────
+
+class PurchaseReturnItemCreate(BaseModel):
+    product_id: str
+    quantity: int
+    unit_price: Decimal
+
+
+class PurchaseReturnCreate(BaseModel):
+    order_id: str
+    supplier_id: str
+    items: List[PurchaseReturnItemCreate]
+    reason: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class PurchaseReturnItemResponse(BaseModel):
+    id: str
+    product_id: str
+    quantity: int
+    unit_price: Decimal
+    total: Decimal
+
+
+class PurchaseReturnResponse(BaseModel):
+    id: str
+    return_number: str
+    order_id: str
+    supplier_id: str
+    user_id: str
+    status: str
+    subtotal: Decimal
+    tax_amount: Decimal
+    total: Decimal
+    reason: Optional[str] = None
+    notes: Optional[str] = None
+    items: List[PurchaseReturnItemResponse] = []
+    created_at: datetime
+    updated_at: datetime
+
+
 # ── Dashboard DTOs ─────────────────────────────────────────────────────────────
 
 class DashboardStats(BaseModel):

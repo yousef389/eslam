@@ -9,6 +9,8 @@ from .debt_payment_repository import DebtPaymentRepositoryImpl
 from .extraction_repository import ExtractionRepositoryImpl
 from .product_repository import ProductRepositoryImpl
 from .purchase_order_repository import PurchaseOrderRepositoryImpl
+from .purchase_return_repository import PurchaseReturnRepositoryImpl
+from .purchase_return_item_repository import PurchaseReturnItemRepositoryImpl
 from .sale_order_repository import SaleOrderRepositoryImpl
 from .supplier_debt_repository import SupplierDebtRepositoryImpl
 from .supplier_repository import SupplierRepositoryImpl
@@ -28,6 +30,8 @@ __all__ = [
     "ExtractionRepositoryImpl",
     "ProductRepositoryImpl",
     "PurchaseOrderRepositoryImpl",
+    "PurchaseReturnRepositoryImpl",
+    "PurchaseReturnItemRepositoryImpl",
     "SaleOrderRepositoryImpl",
     "SupplierDebtRepositoryImpl",
     "SupplierRepositoryImpl",

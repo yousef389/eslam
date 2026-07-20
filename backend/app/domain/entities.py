@@ -164,6 +164,62 @@ class PurchaseOrder:
 
 
 @dataclass
+class PurchaseReturn:
+    id: str = field(default_factory=_new_id)
+    return_number: str = ""
+    order_id: str = ""
+    supplier_id: str = ""
+    user_id: str = ""
+    status: str = "pending"
+    subtotal: Money = field(default_factory=lambda: Money(amount=Decimal("0.00")))
+    tax_amount: Money = field(default_factory=lambda: Money(amount=Decimal("0.00")))
+    total: Money = field(default_factory=lambda: Money(amount=Decimal("0.00")))
+    reason: str = ""
+    notes: str = ""
+    created_at: datetime = field(default_factory=_now_utc)
+    updated_at: datetime = field(default_factory=_now_utc)
+
+
+@dataclass
+class PurchaseReturnItem:
+    id: str = field(default_factory=_new_id)
+    return_id: str = ""
+    product_id: str = ""
+    quantity: int = 0
+    unit_price: Money = field(default_factory=lambda: Money(amount=Decimal("0.00")))
+    total: Money = field(default_factory=lambda: Money(amount=Decimal("0.00")))
+    created_at: datetime = field(default_factory=_now_utc)
+
+
+@dataclass
+class SaleReturn:
+    id: str = field(default_factory=_new_id)
+    return_number: str = ""
+    order_id: str = ""
+    customer_id: str = ""
+    user_id: str = ""
+    status: str = "pending"
+    subtotal: Money = field(default_factory=lambda: Money(amount=Decimal("0.00")))
+    tax_amount: Money = field(default_factory=lambda: Money(amount=Decimal("0.00")))
+    total: Money = field(default_factory=lambda: Money(amount=Decimal("0.00")))
+    reason: str = ""
+    notes: str = ""
+    created_at: datetime = field(default_factory=_now_utc)
+    updated_at: datetime = field(default_factory=_now_utc)
+
+
+@dataclass
+class SaleReturnItem:
+    id: str = field(default_factory=_new_id)
+    return_id: str = ""
+    product_id: str = ""
+    quantity: int = 0
+    unit_price: Money = field(default_factory=lambda: Money(amount=Decimal("0.00")))
+    total: Money = field(default_factory=lambda: Money(amount=Decimal("0.00")))
+    created_at: datetime = field(default_factory=_now_utc)
+
+
+@dataclass
 class Transaction:
     id: str = field(default_factory=_new_id)
     transaction_number: str = ""

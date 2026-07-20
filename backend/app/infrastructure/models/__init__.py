@@ -6,7 +6,9 @@ from .debts import CustomerDebtModel, DebtPaymentModel, SupplierDebtModel
 from .extractions import ExtractionModel
 from .products import ProductModel
 from .purchase_orders import PurchaseOrderItemModel, PurchaseOrderModel
+from .purchase_returns import PurchaseReturnItemModel, PurchaseReturnModel
 from .sale_orders import SaleOrderItemModel, SaleOrderModel
+from .sale_returns import SaleReturnItemModel, SaleReturnModel
 from .suppliers import SupplierModel
 from .system_settings import SystemSettingModel
 from .transactions import TransactionModel
@@ -24,8 +26,12 @@ __all__ = [
     "ProductModel",
     "PurchaseOrderItemModel",
     "PurchaseOrderModel",
+    "PurchaseReturnItemModel",
+    "PurchaseReturnModel",
     "SaleOrderItemModel",
     "SaleOrderModel",
+    "SaleReturnItemModel",
+    "SaleReturnModel",
     "SupplierDebtModel",
     "SystemSettingModel",
     "SupplierModel",

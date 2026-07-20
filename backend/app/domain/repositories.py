@@ -17,6 +17,8 @@ from .entities import (
     Product,
     PurchaseOrder,
     PurchaseOrderItem,
+    PurchaseReturn,
+    PurchaseReturnItem,
     SaleOrder,
     SaleOrderItem,
     Supplier,
@@ -173,6 +175,32 @@ class PurchaseOrderItemRepository(BaseRepository[PurchaseOrderItem]):
     async def get_by_order(
         self, order_id: str, page: int = 1, per_page: int = 20
     ) -> Tuple[List[PurchaseOrderItem], int]:
+        ...
+
+
+class PurchaseReturnRepository(BaseRepository[PurchaseReturn]):
+    @abstractmethod
+    async def get_by_return_number(self, return_number: str) -> Optional[PurchaseReturn]:
+        ...
+
+    @abstractmethod
+    async def get_by_supplier(
+        self, supplier_id: str, page: int = 1, per_page: int = 20
+    ) -> Tuple[List[PurchaseReturn], int]:
+        ...
+
+    @abstractmethod
+    async def get_by_order(
+        self, order_id: str, page: int = 1, per_page: int = 20
+    ) -> Tuple[List[PurchaseReturn], int]:
+        ...
+
+
+class PurchaseReturnItemRepository(BaseRepository[PurchaseReturnItem]):
+    @abstractmethod
+    async def get_by_return(
+        self, return_id: str, page: int = 1, per_page: int = 20
+    ) -> Tuple[List[PurchaseReturnItem], int]:
         ...
 
 

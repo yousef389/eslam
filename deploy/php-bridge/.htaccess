@@ -1,0 +1,15 @@
+RewriteEngine On
+
+# Handle API proxy
+RewriteRule ^api/(.*)$ index.php [L,QSA]
+
+# Handle health check
+RewriteRule ^health$ index.php [L,QSA]
+
+# Serve existing static files
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# SPA fallback - all other routes to index.php
+RewriteRule ^ index.php [L]
