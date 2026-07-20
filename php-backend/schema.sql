@@ -1,6 +1,5 @@
 -- Sanitary ERP - MySQL Schema for InfinityFree
-CREATE DATABASE IF NOT EXISTS `if0_42446288_rslam` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `if0_42446288_rslam`;
+-- CREATE DATABASE and USE are handled by the DB connection in config.php
 
 CREATE TABLE IF NOT EXISTS users (
   id VARCHAR(36) PRIMARY KEY,

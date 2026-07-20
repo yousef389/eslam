@@ -2,6 +2,7 @@
 require_once __DIR__ . '/config.php';
 
 function getDB() {
+    global $config;
     static $pdo = null;
     if ($pdo === null) {
         $dsn = "mysql:host={$config['db_host']};dbname={$config['db_name']};charset=utf8mb4";

@@ -22,7 +22,7 @@ $input = getInput();
 
 // Strip /api/v1 prefix
 if (strpos($uri, '/api/v1') === 0) {
-    $uri = substr($uri, 6);
+    $uri = substr($uri, 7);
 }
 
 // ─── ROUTING ──────────────────────────────────────────────────────────────────
@@ -170,19 +170,35 @@ $routes = [
     route('PUT', '/extractions/{id}/review', 'extractionsReview'),
 ];
 
-// Match route
-foreach ($routes as $r) {
-    if ($r !== null) {
-        $handler = $r['handler'];
-        $params = $r['params'];
-        $handler($params);
-        exit;
-    }
-}
-
 // Health check
 if ($uri === '/health' || $uri === '') {
     successResponse(['status' => 'healthy', 'hosting' => 'infinityfree']);
+}
+
+// Setup endpoint - creates all tables
+if ($uri === '/setup' && $method_req === 'POST') {
+    try {
+        $db = getDB();
+        $schema = file_get_contents(__DIR__ . '/schema.sql');
+        $db->exec($schema);
+        successResponse(['message' => 'Database tables created successfully']);
+    } catch (Exception $e) {
+        errorResponse('Setup failed: ' . $e->getMessage(), 500);
+    }
+}
+
+// Match route
+try {
+    foreach ($routes as $r) {
+        if ($r !== null) {
+            $handler = $r['handler'];
+            $params = $r['params'];
+            $handler($params);
+            exit;
+        }
+    }
+} catch (Exception $e) {
+    errorResponse('Server error: ' . $e->getMessage(), 500);
 }
 
 errorResponse('Not found: ' . $uri, 404);
